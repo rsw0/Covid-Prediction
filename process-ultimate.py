@@ -5,57 +5,114 @@ import pandas as pd
 import re
 import numpy as np
 import missingno as msno
-import nltk
 from imblearn.under_sampling import RandomUnderSampler
-from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet
-from scipy.sparse import hstack
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import mean_squared_error, confusion_matrix
 from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import GridSearchCV
+import xgboost as xgb
+
 
 # Concatenating Subsets
-path = r'./data/carbon'
-all_files = glob.glob(os.path.join(path, "*.csv"))
-concat_df = pd.concat((pd.read_csv(f) for f in all_files))
-concat_df.to_csv('./data/raw_concatenated.csv', index=False)
+# path = r'./data/carbon'
+# all_files = glob.glob(os.path.join(path, "*.csv"))
+# concat_df = pd.concat((pd.read_csv(f) for f in all_files))
+# concat_df.to_csv('./data/raw_concatenated.csv', index=False)
+
 
 # Loading
 print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
 
+
 # Subsetting Columns
-# print("Dropping unnecessary columns...")
-# raw_df = raw_df.drop(columns=['test_date', 'test_indication'])
+print("Dropping unnecessary columns...")
+raw_df = raw_df.drop(columns=['batch_date', 'swab_type', 'test_name', 'temperature', 'pulse', 'sys', 'dia', 'rr', 'sats', 'rapid_flu_results', 'rapid_strep_results',
+'ctab', 'labored_respiration', 'rhonchi', 'wheezes', 'days_since_symptom_onset', 'cough_severity', 'sob_severity', 'cxr_findings', 'cxr_impression', 
+'cxr_label', 'cxr_link', 'er_referral'])
 
-# Handling NA
-print("Handling NA...")
 
-# raw_df = raw_df.replace({'None': np.nan, 'Other': np.nan})
-print(raw_df.head())
+# Analyzing NA Distribution & Count NAs
+print("Analyzing NA values distribution...")
 na_chart = msno.matrix(raw_df)
 na_chart_copy = na_chart.get_figure()
 na_chart_copy.savefig('output/na_chart.png', bbox_inches = 'tight')
 plt.clf()
+# print(raw_df.shape)
+# print(raw_df.isnull().sum())
 
-print(raw_df.isnull().sum())
-print(raw_df.shape)
 
-# raw_df.dropna(inplace=True)
-print(raw_df['covid19_test_results'].value_counts())
+# Converting objects to strings & Lowercasing
+print("Converting to strings & lowercasing...")
+string_col_list = raw_df.drop(columns=['age']).columns
+raw_df[string_col_list] = raw_df[string_col_list].astype(str)
+# don't use .apply(str) ever again. It force-applies a string type, which would include the newline character
+for string_col in string_col_list:
+    raw_df[string_col] = raw_df[string_col].str.lower()
+
+
+# No NAN Encoding
+print("Encoding...")
+bool_col_list = ['high_risk_exposure_occupation', 'high_risk_interactions', 'diabetes', 'chd', 'htn', 'cancer', 'asthma', 'copd', 'autoimmune_dis', 
+'smoker', 'cough', 'fever', 'sob', 'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste', 'runny_nose', 'muscle_sore', 'sore_throat']
+raw_df[bool_col_list] = raw_df[bool_col_list].replace({'true': 1, 'false': 0, 'nan': np.nan})
+raw_df['covid19_test_results'] = raw_df['covid19_test_results'].replace({'negative': 0, 'positive': 1, 'nan': np.nan})
+# bad encoders, need reshaping and doesn't work
+# bool_label_encoder = OneHotEncoder(handle_unknown='ignore')
+# bool_label_encoder = bool_label_encoder.fit(raw_df['high_risk_exposure_occupation']) 
+# # did not use fit_transform() because I want encoding to be memorized/to be able to apply the same encoding for different columns of the same values
+# # also good for inverse transform
+# bool_col_list = ['high_risk_exposure_occupation', 'high_risk_interactions', 'diabetes', 'chd', 'htn', 'cancer', 'asthma', 'copd', 'autoimmune_dis', 
+# 'smoker', 'cough', 'fever', 'sob', 'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste', 'runny_nose', 'muscle_sore', 'sore_throat']
+# for bool_col in bool_col_list:
+#     raw_df[bool_col] = bool_label_encoder.transform(raw_df[bool_col])
+
+
+# Age Outlier & Scaling
+print("Checking outlier and scaling on Age")
+raw_df.loc[raw_df['age'] < 150]
+min_max_scaler = MinMaxScaler()
+raw_df['age'] = min_max_scaler.fit_transform(raw_df[['age']])
+# use double brackets to get a df format instead of series. This way scalers will work
+
+
+# Converting to Categorical
+print("Converting to Categorical...")
+raw_df[string_col_list] = raw_df[string_col_list].astype("category")
+
+
+# Dropping All Remaining NA
+print("Creating full set for non-XGBoost methods...")
+raw_df_full = raw_df.drop(columns=['high_risk_interactions', 'fever'])
+# raw_df = raw_df.replace({'None': np.nan, 'Other': np.nan})
+raw_df_full.dropna(inplace=True)
+string_col_list_1 = raw_df.drop(columns=['age', 'high_risk_interactions', 'fever']).columns
+raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype(int)
+raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype("category")
+
+
+# Analyzing Distribution of Class Labels
+print("Analyzing distribution of class labels...")
+#print(raw_df['covid19_test_results'].value_counts())
 test_histo = raw_df['covid19_test_results'].hist()
 test_histo_copy = test_histo.get_figure()
 test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
+
+
+
+# Train/Validation Split
+print("Train/Validation Split...")
+X_train_boost, X_validation_boost, Y_train_boost, Y_validation_boost = train_test_split(raw_df.drop(['covid19_test_results'], axis=1), 
+raw_df['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df['covid19_test_results'])
+X_train_full, X_validation_full, Y_train_full, Y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
+raw_df_full['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df_full['covid19_test_results'])
+
 
 # # Undersampling
 # print("Undersampling...")
@@ -75,96 +132,11 @@ test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
 # raw_df = one_star.append(two_star).append(three_star).append(four_star).append(five_star)
 # print(raw_df['Score'].value_counts())
 
-# '''
-# # Converting objects to strings
-# print("Converting to strings...")
-# raw_df['Summary'] = raw_df['Summary'].apply(str)
-# raw_df['Text'] = raw_df['Text'].apply(str)
-# X_submission['Summary'] = X_submission['Summary'].apply(str)
-# X_submission['Text'] = X_submission['Text'].apply(str)
 
 
-# # Lowercase
-# print("Converting to lowercase...")
-# raw_df['Summary'] = raw_df['Summary'].str.lower()
-# raw_df['Text'] = raw_df['Text'].str.lower()
-# X_submission['Summary'] = X_submission['Summary'].str.lower()
-# X_submission['Text'] = X_submission['Text'].str.lower()
 
-
-# # Punctuation, Special Character & Whitespace (adjusted for stopwords)
-# print("Removing punctuations and special characters...")
-# def fast_rem(my_string):
-#     return(re.sub(r'[^a-z \']', '', my_string).replace('\'', ' '))
-# raw_df['Summary'] = raw_df['Summary'].apply(fast_rem)
-# raw_df['Text'] = raw_df['Text'].apply(fast_rem)
-# X_submission['Summary'] = X_submission['Summary'].apply(fast_rem)
-# X_submission['Text'] = X_submission['Text'].apply(fast_rem)
-
-
-# # Tokenization, Lemmatization
-# print("Tokenization and Lemmatization...")
-# lemmatizer = WordNetLemmatizer()
-# tag_dict = {"J": wordnet.ADJ, "N": wordnet.NOUN, "V": wordnet.VERB, "R": wordnet.ADV}
-# def fast_lemma(sentence):
-#     return (" ".join([lemmatizer.lemmatize(key[0], tag_dict.get(key[1][0], wordnet.NOUN)) for key in nltk.pos_tag(word_tokenize(sentence))]))
-# tk_start = time.perf_counter()
-# raw_df['Summary'] = raw_df['Summary'].apply(fast_lemma)
-# raw_df['Text'] = raw_df['Text'].apply(fast_lemma)
-# X_submission['Summary'] = X_submission['Summary'].apply(fast_lemma)
-# X_submission['Text'] = X_submission['Text'].apply(fast_lemma)
-# tk_stop = time.perf_counter()
-# print("Tokenization and Lemmatization took: " + str(tk_stop-tk_start) + ' seconds')
-
-
-# # Stopword & Noise Removal (Token with length below 2)
-# print("Removing Stopwords...")
-# cachedStopWords = stopwords.words("english")
-# def fast_stop(my_string):
-#     return(' '.join([word for word in my_string.split() if word not in cachedStopWords and len(word) > 2]))
-# raw_df['Summary'] = raw_df['Summary'].apply(fast_stop)
-# raw_df['Text'] = raw_df['Text'].apply(fast_stop)
-# X_submission['Summary'] = X_submission['Summary'].apply(fast_stop)
-# X_submission['Text'] = X_submission['Text'].apply(fast_stop)
-
-
-# # Vectorizer
-# print("Vectorization - Fitting...")
-# vectorizer = TfidfVectorizer(lowercase = False, ngram_range= (1,2), min_df = 5, max_df = 0.9, max_features = 5000).fit(raw_df['Text'])
-# vectorizer_s = TfidfVectorizer(lowercase = False, ngram_range= (1,2), min_df = 5, max_df = 0.9, max_features = 1000).fit(raw_df['Summary'])
-# print("Vectorization - Transforming...")
-# raw_df_vect = vectorizer.transform(raw_df['Text'])
-# X_submission_vect = vectorizer.transform(X_submission['Text'])
-# raw_df_vect_s = vectorizer_s.transform(raw_df['Summary'])
-# X_submission_vect_s = vectorizer_s.transform(X_submission['Summary'])
-# print("Vectorization - Merging Sparse Matrices")
-# raw_df_vect = hstack((raw_df_vect, raw_df_vect_s))
-# X_submission_vect = hstack((X_submission_vect, X_submission_vect_s))
-# print("Vectorization - SVD...")
-# svd_s_time = time.perf_counter()
-# svd = TruncatedSVD(n_components=200, random_state=0)
-# raw_df_vect = svd.fit_transform(raw_df_vect)
-# print(svd.explained_variance_ratio_.sum())
-# X_submission_vect = svd.fit_transform(X_submission_vect)
-# print(svd.explained_variance_ratio_.sum())
-# svd_f_time = time.perf_counter()
-# print('SVD took: ' + str(svd_f_time - svd_s_time) + ' seconds')
-# print("Vectorization - Creating Pandas df...")
-# raw_df_df = pd.DataFrame(raw_df_vect, columns=np.arange(200)).set_index(raw_df.index.values)
-# X_submission_df = pd.DataFrame(X_submission_vect, columns=np.arange(200)).set_index(X_submission.index.values)
-# # raw_df_df = pd.DataFrame(raw_df_vect.toarray(), columns=vectorizer.get_feature_names()).set_index(raw_df.index.values)
-# # X_submission_df = pd.DataFrame(X_submission_vect.toarray(), columns=vectorizer.get_feature_names()).set_index(X_submission.index.values)
-# print("Vectorization - Joining with Original df...")
-# # raw_df and X_submission below contains original columns with tfidf 
-# raw_df = raw_df.join(raw_df_df)
-# X_submission = X_submission.join(X_submission_df)
-
-
-# # Train/Validation Split
-# print("Train/Validation Split...")
-# X_train, X_validation, Y_train, Y_validation = train_test_split(raw_df.drop(['Score'], axis=1), raw_df['Score'], test_size=0.20, random_state=0, stratify=raw_df['Score'])
-
-
+# from sklearn.linear_model import LogisticRegression   
+# Lr = LogisticRegression(class_weight='balanced')
 
 '''
 # Saving to Local
@@ -176,44 +148,9 @@ Y_validation.to_pickle("./data/Y_validation.pkl")
 X_submission.to_pickle("./data/X_submission.pkl")
 '''
 
-
-# Old Functions
 '''
 # time
 tfidf_s_time = time.perf_counter()
 tfidf_f_time = time.perf_counter()
 print('tfidf vectorizer took: ' + str(tfidf_f_time - tfidf_s_time) + ' seconds')
-'''
-
-'''
-# old WordNet lemmatizer, used list comprehension instead, performance similar
-def lemmatize_sentence(sentence):
-    nltk_tagged = nltk.pos_tag(word_tokenize(sentence))  
-    wordnet_tagged = map(lambda x: (x[0], tag_dict.get(x[1][0])), nltk_tagged)
-    lemmatized_sentence = []
-    for word, tag in wordnet_tagged:
-        if len(word) <= 2:
-            continue
-        if tag is None:
-            #if there is no available tag, append the token as is
-            lemmatized_sentence.append(word)
-        else:        
-            #else use the tag to lemmatize the token
-            lemmatized_sentence.append(lemmatizer.lemmatize(word, tag))
-    return " ".join(lemmatized_sentence)
-'''
-
-'''
-# spaCy Tokenization and Lemmatization with noise removal below length 2. Too slow
-nlp = spacy.load('en_core_web_sm', disable=["parser", "ner"]) 
-def fast_lemma(my_string):
-    spacy_form = nlp(my_string)
-    return(" ".join([word.lemma_ for word in spacy_form if len(word) > 2]))
-testtext = fast_lemma(testtext)
-print(testtext)
-t1_start = time.perf_counter()
-X_train['Summary'] = X_train['Summary'].apply(fast_lemma)
-X_train['Text'] = X_train['Text'].apply(fast_lemma)
-t1_stop = time.perf_counter()
-print("Elapsed time during the whole program in seconds:", t1_stop-t1_start) 
 '''
