@@ -10,6 +10,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest, chi2, mutual_info_classif
 from sklearn.metrics import mean_squared_error, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -103,15 +104,65 @@ print("Analyzing distribution of class labels...")
 test_histo = raw_df['covid19_test_results'].hist()
 test_histo_copy = test_histo.get_figure()
 test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
-
+plt.clf()
 
 
 # Train/Validation Split
 print("Train/Validation Split...")
-X_train_boost, X_validation_boost, Y_train_boost, Y_validation_boost = train_test_split(raw_df.drop(['covid19_test_results'], axis=1), 
+X_train_boost, X_validation_boost, y_train_boost, y_validation_boost = train_test_split(raw_df.drop(['covid19_test_results'], axis=1), 
 raw_df['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df['covid19_test_results'])
-X_train_full, X_validation_full, Y_train_full, Y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
+X_train_full, X_validation_full, y_train_full, y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
 raw_df_full['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df_full['covid19_test_results'])
+
+
+# Feature Selection
+print("Feature selection...")
+def select_features_chi2(X_train, y_train, X_validation):
+	fs = SelectKBest(score_func=chi2, k='all')
+	fs.fit(X_train, y_train)
+	X_train_fs = fs.transform(X_train)
+	X_validation_fs = fs.transform(X_validation)
+    # could have set k to a number, and returned the transformed dataset along with function
+    # since we want to know how the values distributes, no need to return the full dataset
+	return X_train_fs, X_validation_fs, fs
+def select_features_mi(X_train, y_train, X_validation):
+	fs = SelectKBest(score_func=mutual_info_classif, k='all')
+	fs.fit(X_train, y_train)
+	X_train_fs = fs.transform(X_train)
+	X_validation_fs = fs.transform(X_validation)
+	return X_train_fs, X_validation_fs, fs
+X_train_fs_chi2, X_validation_fs_chi2, fs_chi2 = select_features_chi2(X_train_full, y_train_full, X_validation_full)
+# chi2_dict = {}
+# for i in range(len(fs_chi2.scores_)):
+#     chi2_dict[i] = fs_chi2.scores_[i]
+#     # print('Feature %d: %f' % (i, fs_chi2.scores_[i]))
+#     pass
+plt.bar([i for i in range(len(fs_chi2.scores_))], fs_chi2.scores_)
+plt.savefig('output/chi2_fs.png', bbox_inches = 'tight')
+plt.clf()
+X_train_fs_mi, X_validation_fs_mi, fs_mi = select_features_mi(X_train_full, y_train_full, X_validation_full)
+# mi_dict = {}
+# for i in range(len(fs_mi.scores_)):
+# 	# print('Feature %d: %f' % (i, fs_mi.scores_[i]))
+#     mi_dict[i] = fs_mi.scores_[i]
+#     pass
+plt.bar([i for i in range(len(fs_mi.scores_))], fs_mi.scores_)
+plt.savefig('output/mi_fs.png', bbox_inches = 'tight')
+# print(chi2_dict)
+# make a dictionary that maps indices to names
+
+# can't use SelectKBest to transform, because you still want column names. SelectKBest returns a np array,
+# and transforming to pandas requires you to specify column names. You don't know which ones are which 
+# unless you manually look
+# fs_post = SelectKBest(score_func=mutual_info_classif, k='13')
+# fs_post.fit(X_train_full, y_train_full)
+# X_train_fs_post = fs_post.transform(X_train_full)
+# X_validation_fs_post = fs_post.transform(X_validation_full)
+# X_train_fs_post = pd.DataFrame(X_train_fs_post, columns = X_train_full.columns)
+# X_validation_fs_post = pd.DataFrame(X_validation_fs_post, columns = X_train_full.columns)
+
+
+
 
 
 # # Undersampling
