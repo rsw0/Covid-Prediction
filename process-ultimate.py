@@ -33,13 +33,6 @@ print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
 
 
-# Subsetting Columns
-print("Dropping unnecessary columns...")
-raw_df = raw_df.drop(columns=['batch_date', 'swab_type', 'test_name', 'temperature', 'pulse', 'sys', 'dia', 'rr', 'sats', 'rapid_flu_results', 'rapid_strep_results',
-'ctab', 'labored_respiration', 'rhonchi', 'wheezes', 'days_since_symptom_onset', 'cough_severity', 'sob_severity', 'cxr_findings', 'cxr_impression', 
-'cxr_label', 'cxr_link', 'er_referral'])
-
-
 # Analyzing NA Distribution & Count NAs
 print("Analyzing NA values distribution...")
 na_chart = msno.matrix(raw_df)
@@ -48,6 +41,13 @@ na_chart_copy.savefig('output/na_chart.png', bbox_inches = 'tight')
 plt.close()
 # print(raw_df.shape)
 # print(raw_df.isnull().sum())
+
+
+# Subsetting Columns
+print("Dropping unnecessary columns...")
+raw_df = raw_df.drop(columns=['batch_date', 'swab_type', 'test_name', 'temperature', 'pulse', 'sys', 'dia', 'rr', 'sats', 'rapid_flu_results', 'rapid_strep_results',
+'ctab', 'labored_respiration', 'rhonchi', 'wheezes', 'days_since_symptom_onset', 'cough_severity', 'sob_severity', 'cxr_findings', 'cxr_impression', 
+'cxr_label', 'cxr_link', 'er_referral'])
 
 
 # Converting objects to strings & Lowercasing
@@ -91,10 +91,12 @@ raw_df[string_col_list] = raw_df[string_col_list].astype("category")
 
 # Dropping All Remaining NA
 print("Creating full set for non-XGBoost methods...")
-raw_df_full = raw_df.drop(columns=['high_risk_interactions', 'fever'])
+counter = Counter(raw_df['covid19_test_results'])
+print(counter)
+raw_df_full = raw_df.drop(columns=['high_risk_interactions'])
 # raw_df = raw_df.replace({'None': np.nan, 'Other': np.nan})
 raw_df_full.dropna(inplace=True)
-string_col_list_1 = raw_df.drop(columns=['age', 'high_risk_interactions', 'fever']).columns
+string_col_list_1 = raw_df.drop(columns=['age', 'high_risk_interactions']).columns
 raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype(int)
 raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype("category")
 
@@ -166,15 +168,15 @@ def mi_select_no_graph():
 # two calls below are only used to create graphs. Actual repeated checking is done below
 chi2_dict = chi2_select()
 mi_dict = mi_select()
-# feature_set = set(mi_select_no_graph()[:18])
-# for rep_mi in range(17, 10, -1):
-# 	if rep_mi < 13:
-# 		temp_feature_set = set(mi_select_no_graph()[:13])
-# 		feature_set.intersection_update(temp_feature_set)
-# 	else:
-# 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
-# 		feature_set.intersection_update(temp_feature_set)
-feature_set = [0, 10, 13, 14, 15, 16, 18, 19]
+feature_set = set(mi_select_no_graph()[:18])
+for rep_mi in range(17, 10, -1):
+	if rep_mi < 13:
+		temp_feature_set = set(mi_select_no_graph()[:13])
+		feature_set.intersection_update(temp_feature_set)
+	else:
+		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
+		feature_set.intersection_update(temp_feature_set)
+# feature_set = [0, 10, 13, 14, 15, 16, 18, 19]
 X_train_full_colnames = X_train_full.columns
 fs_colnames = []
 for elem in feature_set:
