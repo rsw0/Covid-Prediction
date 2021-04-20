@@ -206,6 +206,8 @@ X_validation_full_fs = X_validation_full[fs_colnames]
 # X_train_fs_post = pd.DataFrame(X_train_fs_post, columns = X_train_full.columns)
 # X_validation_fs_post = pd.DataFrame(X_validation_fs_post, columns = X_train_full.columns)
 
+print(X_train_full_fs.columns)
+
 
 # Undersample with One-Sided Selection (Tomek Links + Condensed Nearest Neighbor)
 print("Undersampling...")
@@ -226,6 +228,95 @@ print(counter)
 
 # from sklearn.linear_model import LogisticRegression   
 # Lr = LogisticRegression(class_weight='balanced')
+## KNN & Logistic & Random Forest & Complement Naive Bayes & Decision Tree 
+# KNN
+#X_train_full, X_validation_full, y_train_full, y_validation_full
+print("Running Models")
+def knn(train_x, train_y, test_x, test_y):
+    neigh = KNeighborsClassifier(n_neighbors=7, n_jobs=-1)
+    neigh.fit(train_x, train_y)
+    y_predictions = neigh.predict(test_x)
+    print("RMSE for KNN model = ", mean_squared_error(test_y, y_predictions))
+    
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the KNN classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/KNN.png')
+    plt.show()
+    
+knn(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+
+#logistic
+def log(train_x, train_y, test_x, test_y):
+    logi = LogisticRegression(n_jobs=-1)
+    logi.fit(train_x, train_y)
+    y_predictions = logi.predict(test_x)
+    print("RMSE for Logistic model = ", mean_squared_error(test_y, y_predictions))
+    
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Logistic classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/Logistic.png')
+    plt.show()
+    
+log(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+
+
+#decision tree
+def dectree(train_x, train_y, test_x, test_y):
+    logi = DecisionTreeClassifier()
+    logi.fit(train_x, train_y)
+    y_predictions = logi.predict(test_x)
+    print("RMSE for Decision Tree model = ", mean_squared_error(test_y, y_predictions))
+    
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Decision Tree classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/Decision_Tree.png')
+    plt.show()
+    
+dectree(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+
+#Complement Naive Bayes
+def cnb(train_x, train_y, test_x, test_y):
+    logi = ComplementNB()
+    logi.fit(train_x, train_y)
+    y_predictions = logi.predict(test_x)
+    print("RMSE for Complement Naive Bayes model = ", mean_squared_error(test_y, y_predictions))
+    
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Complement Naive Bayes classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/CompNB.png')
+    plt.show()
+    
+cnb(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+
+
+#Random Forest Classifier
+def rfc(train_x, train_y, test_x, test_y):
+    logi = RandomForestClassifier(n_jobs=-1)
+    logi.fit(train_x, train_y)
+    y_predictions = logi.predict(test_x)
+    print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
+    
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Random Forest classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/Random_Forest.png')
+    plt.show()
+    
+rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
 '''
 # Saving to Local
