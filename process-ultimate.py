@@ -209,6 +209,8 @@ counter = Counter(y_train_full)
 print(counter)
 
 
+# Oversampling by
+
 # from sklearn.linear_model import LogisticRegression   
 # Lr = LogisticRegression(class_weight='balanced')
 
