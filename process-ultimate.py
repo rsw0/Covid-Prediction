@@ -124,6 +124,7 @@ raw_df['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df[
 X_train_full, X_validation_full, y_train_full, y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
 raw_df_full['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df_full['covid19_test_results'])
 
+print(X_train_full.columns)
 
 # Feature Selection
 print("Feature selection...")
@@ -175,15 +176,20 @@ def mi_select_no_graph():
 # two calls below are only used to create graphs. Actual repeated checking is done below
 chi2_dict = chi2_select()
 mi_dict = mi_select()
-feature_set = set(mi_select_no_graph()[:18])
-for rep_mi in range(17, 11, -1):
-	if rep_mi < 15:
-		temp_feature_set = set(mi_select_no_graph()[:15])
-		feature_set.intersection_update(temp_feature_set)
-	else:
-		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
-		feature_set.intersection_update(temp_feature_set)
-# feature_set = [0, 10, 13, 14, 15, 16, 18, 19]
+# feature_set = set(mi_select_no_graph()[:18])
+# for rep_mi in range(17, 11, -1):
+# 	if rep_mi < 15:
+# 		temp_feature_set = set(mi_select_no_graph()[:15])
+# 		feature_set.intersection_update(temp_feature_set)
+# 	else:
+# 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
+# 		feature_set.intersection_update(temp_feature_set)
+feature_set = [9, 10, 13, 14, 15, 16, 18, 19, 20]
+# ['high_risk_exposure_occupation', 'diabetes', 'chd', 'htn', 'cancer',
+#        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
+#        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
+#        'runny_nose', 'muscle_sore', 'sore_throat', 'age_greater_than_55']
+
 X_train_full_colnames = X_train_full.columns
 fs_colnames = []
 for elem in feature_set:
