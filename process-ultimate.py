@@ -2,25 +2,26 @@ import time
 import os
 import glob
 import pandas as pd
-import re
 import numpy as np
 import missingno as msno
-from imblearn.under_sampling import RandomUnderSampler
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, chi2, mutual_info_classif
-from sklearn.metrics import mean_squared_error, confusion_matrix
-import seaborn as sns
-import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_error, confusion_matrix
+from collections import Counter
+from imblearn.under_sampling import OneSidedSelection
+from imblearn.under_sampling import NeighbourhoodCleaningRule
 import xgboost as xgb
 
 
 # Concatenating Subsets
+# print("Concatenating subsets...")
 # path = r'./data/carbon'
 # all_files = glob.glob(os.path.join(path, "*.csv"))
 # concat_df = pd.concat((pd.read_csv(f) for f in all_files))
@@ -44,7 +45,7 @@ print("Analyzing NA values distribution...")
 na_chart = msno.matrix(raw_df)
 na_chart_copy = na_chart.get_figure()
 na_chart_copy.savefig('output/na_chart.png', bbox_inches = 'tight')
-plt.clf()
+plt.close()
 # print(raw_df.shape)
 # print(raw_df.isnull().sum())
 
@@ -104,7 +105,7 @@ print("Analyzing distribution of class labels...")
 test_histo = raw_df['covid19_test_results'].hist()
 test_histo_copy = test_histo.get_figure()
 test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
-plt.clf()
+plt.close()
 
 
 # Train/Validation Split
@@ -117,40 +118,69 @@ raw_df_full['covid19_test_results'], test_size=0.20, random_state=0, stratify=ra
 
 # Feature Selection
 print("Feature selection...")
-def select_features_chi2(X_train, y_train, X_validation):
+def select_features_chi2_helper(X_train, y_train):
 	fs = SelectKBest(score_func=chi2, k='all')
 	fs.fit(X_train, y_train)
-	X_train_fs = fs.transform(X_train)
-	X_validation_fs = fs.transform(X_validation)
+	# X_train_fs = fs.transform(X_train)
+	# X_validation_fs = fs.transform(X_validation)
     # could have set k to a number, and returned the transformed dataset along with function
     # since we want to know how the values distributes, no need to return the full dataset
-	return X_train_fs, X_validation_fs, fs
-def select_features_mi(X_train, y_train, X_validation):
+	return fs
+def select_features_mi_helper(X_train, y_train):
 	fs = SelectKBest(score_func=mutual_info_classif, k='all')
 	fs.fit(X_train, y_train)
-	X_train_fs = fs.transform(X_train)
-	X_validation_fs = fs.transform(X_validation)
-	return X_train_fs, X_validation_fs, fs
-X_train_fs_chi2, X_validation_fs_chi2, fs_chi2 = select_features_chi2(X_train_full, y_train_full, X_validation_full)
-# chi2_dict = {}
-# for i in range(len(fs_chi2.scores_)):
-#     chi2_dict[i] = fs_chi2.scores_[i]
-#     # print('Feature %d: %f' % (i, fs_chi2.scores_[i]))
-#     pass
-plt.bar([i for i in range(len(fs_chi2.scores_))], fs_chi2.scores_)
-plt.savefig('output/chi2_fs.png', bbox_inches = 'tight')
-plt.clf()
-X_train_fs_mi, X_validation_fs_mi, fs_mi = select_features_mi(X_train_full, y_train_full, X_validation_full)
-# mi_dict = {}
-# for i in range(len(fs_mi.scores_)):
-# 	# print('Feature %d: %f' % (i, fs_mi.scores_[i]))
-#     mi_dict[i] = fs_mi.scores_[i]
-#     pass
-plt.bar([i for i in range(len(fs_mi.scores_))], fs_mi.scores_)
-plt.savefig('output/mi_fs.png', bbox_inches = 'tight')
-# print(chi2_dict)
-# make a dictionary that maps indices to names
-
+	# X_train_fs = fs.transform(X_train)
+	# X_validation_fs = fs.transform(X_validation)
+	return fs
+def chi2_select():
+	fs_chi2 = select_features_chi2_helper(X_train_full, y_train_full)
+	chi2_dict = {}
+	for i in range(len(fs_chi2.scores_)):
+		chi2_dict[i] = fs_chi2.scores_[i]
+		# print('Feature %d: %f' % (i, fs_chi2.scores_[i]))
+	chi2_dict = sorted(chi2_dict, key=chi2_dict.get, reverse = True)
+	plt.bar([i for i in range(len(fs_chi2.scores_))], fs_chi2.scores_)
+	plt.savefig('output/chi2_fs.png', bbox_inches = 'tight')
+	plt.close()
+	# closing the plot works here. plt.clf() throws a Tkinter exception (perhaps due to memory?)
+	return chi2_dict
+def mi_select():
+	fs_mi = select_features_mi_helper(X_train_full, y_train_full)
+	mi_dict = {}
+	for i in range(len(fs_mi.scores_)):
+		mi_dict[i] = fs_mi.scores_[i]
+		# print('Feature %d: %f' % (i, fs_mi.scores_[i]))
+	mi_dict = sorted(mi_dict, key=mi_dict.get, reverse = True)
+	plt.bar([i for i in range(len(fs_mi.scores_))], fs_mi.scores_)
+	plt.savefig('output/mi_fs.png', bbox_inches = 'tight')
+	plt.close()
+	return mi_dict
+def mi_select_no_graph():
+	fs_mi = select_features_mi_helper(X_train_full, y_train_full)
+	mi_dict = {}
+	for i in range(len(fs_mi.scores_)):
+		mi_dict[i] = fs_mi.scores_[i]
+		# print('Feature %d: %f' % (i, fs_mi.scores_[i]))
+	mi_dict = sorted(mi_dict, key=mi_dict.get, reverse = True)
+	return mi_dict
+# two calls below are only used to create graphs. Actual repeated checking is done below
+chi2_dict = chi2_select()
+mi_dict = mi_select()
+# feature_set = set(mi_select_no_graph()[:18])
+# for rep_mi in range(17, 10, -1):
+# 	if rep_mi < 13:
+# 		temp_feature_set = set(mi_select_no_graph()[:13])
+# 		feature_set.intersection_update(temp_feature_set)
+# 	else:
+# 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
+# 		feature_set.intersection_update(temp_feature_set)
+feature_set = [0, 10, 13, 14, 15, 16, 18, 19]
+X_train_full_colnames = X_train_full.columns
+fs_colnames = []
+for elem in feature_set:
+	fs_colnames.append(X_train_full_colnames[elem])
+X_train_full_fs = X_train_full[fs_colnames]
+X_validation_full_fs = X_validation_full[fs_colnames]
 # can't use SelectKBest to transform, because you still want column names. SelectKBest returns a np array,
 # and transforming to pandas requires you to specify column names. You don't know which ones are which 
 # unless you manually look
@@ -162,28 +192,19 @@ plt.savefig('output/mi_fs.png', bbox_inches = 'tight')
 # X_validation_fs_post = pd.DataFrame(X_validation_fs_post, columns = X_train_full.columns)
 
 
-
-
-
-# # Undersampling
-# print("Undersampling...")
-# raw_df = raw_df.sample(frac=1)
-# one_star = raw_df.loc[raw_df['Score'] == 1.0]
-# two_star = raw_df.loc[raw_df['Score'] == 2.0]
-# three_star = raw_df.loc[raw_df['Score'] == 3.0]
-# four_star = raw_df.loc[raw_df['Score'] == 4.0]
-# five_star = raw_df.loc[raw_df['Score'] == 5.0]
-# base = one_star.shape[0]
-# rem_4 = four_star.shape[0] - 2*(one_star.shape[0])
-# rem_5 = five_star.shape[0] - 2*(one_star.shape[0])
-# drop_indices_4 = np.random.choice(four_star.index, rem_4, replace=False)
-# four_star = four_star.drop(drop_indices_4)
-# drop_indices_5 = np.random.choice(five_star.index, rem_5, replace=False)
-# five_star = five_star.drop(drop_indices_5)
-# raw_df = one_star.append(two_star).append(three_star).append(four_star).append(five_star)
-# print(raw_df['Score'].value_counts())
-
-
+# Undersample with One-Sided Selection (Tomek Links + Condensed Nearest Neighbor)
+print("Undersampling...")
+# summarize class distribution
+counter = Counter(y_train_full)
+print(counter)
+undersample_oss = OneSidedSelection(n_neighbors=1, n_seeds_S=200)
+X_train_full_fs, y_train_full = undersample_oss.fit_resample(X_train_full_fs, y_train_full)
+counter = Counter(y_train_full)
+print(counter)
+undersample_ncr = NeighbourhoodCleaningRule(n_neighbors=3, threshold_cleaning=0.5)
+X_train_full_fs, y_train_full = undersample_ncr.fit_resample(X_train_full_fs, y_train_full)
+counter = Counter(y_train_full)
+print(counter)
 
 
 # from sklearn.linear_model import LogisticRegression   
