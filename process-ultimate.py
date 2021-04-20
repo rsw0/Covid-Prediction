@@ -50,9 +50,16 @@ raw_df = raw_df.drop(columns=['batch_date', 'swab_type', 'test_name', 'temperatu
 'cxr_label', 'cxr_link', 'er_referral'])
 
 
+# Age to Categorical
+print("Converting Age to binary...")
+raw_df['age_greater_than_55'] = np.where(raw_df['age'] > 55, 1, 0)
+raw_df = raw_df.drop(columns=['age'])
+
+
 # Converting objects to strings & Lowercasing
 print("Converting to strings & lowercasing...")
-string_col_list = raw_df.drop(columns=['age']).columns
+# string_col_list = raw_df.drop(columns=['age']).columns
+string_col_list = raw_df.columns
 raw_df[string_col_list] = raw_df[string_col_list].astype(str)
 # don't use .apply(str) ever again. It force-applies a string type, which would include the newline character
 for string_col in string_col_list:
@@ -77,11 +84,11 @@ raw_df['covid19_test_results'] = raw_df['covid19_test_results'].replace({'negati
 
 
 # Age Outlier & Scaling
-print("Checking outlier and scaling on Age")
-raw_df.loc[raw_df['age'] < 150]
-min_max_scaler = MinMaxScaler()
-raw_df['age'] = min_max_scaler.fit_transform(raw_df[['age']])
-# use double brackets to get a df format instead of series. This way scalers will work
+# print("Checking outlier and scaling on Age")
+# raw_df.loc[raw_df['age'] < 150]
+# min_max_scaler = MinMaxScaler()
+# raw_df['age'] = min_max_scaler.fit_transform(raw_df[['age']])
+# # use double brackets to get a df format instead of series. This way scalers will work
 
 
 # Converting to Categorical
@@ -96,7 +103,7 @@ print(counter)
 raw_df_full = raw_df.drop(columns=['high_risk_interactions'])
 # raw_df = raw_df.replace({'None': np.nan, 'Other': np.nan})
 raw_df_full.dropna(inplace=True)
-string_col_list_1 = raw_df.drop(columns=['age', 'high_risk_interactions']).columns
+string_col_list_1 = raw_df.drop(columns=['high_risk_interactions']).columns
 raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype(int)
 raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype("category")
 
@@ -169,9 +176,9 @@ def mi_select_no_graph():
 chi2_dict = chi2_select()
 mi_dict = mi_select()
 feature_set = set(mi_select_no_graph()[:18])
-for rep_mi in range(17, 10, -1):
-	if rep_mi < 13:
-		temp_feature_set = set(mi_select_no_graph()[:13])
+for rep_mi in range(17, 11, -1):
+	if rep_mi < 15:
+		temp_feature_set = set(mi_select_no_graph()[:15])
 		feature_set.intersection_update(temp_feature_set)
 	else:
 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
