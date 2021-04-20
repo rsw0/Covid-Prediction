@@ -19,6 +19,13 @@ from imblearn.under_sampling import OneSidedSelection
 from imblearn.under_sampling import NeighbourhoodCleaningRule
 import xgboost as xgb
 
+###KNN & Logistic & Complement NB & Decision Tree Testing
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import mean_squared_error, confusion_matrix
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import ComplementNB
+from sklearn.ensemble import RandomForestClassifier
 
 # Concatenating Subsets
 # print("Concatenating subsets...")
