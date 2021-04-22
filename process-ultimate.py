@@ -12,12 +12,15 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, chi2, mutual_info_classif
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import mean_squared_error, confusion_matrix
 from collections import Counter
 from imblearn.under_sampling import OneSidedSelection
 from imblearn.under_sampling import NeighbourhoodCleaningRule
 from imblearn.over_sampling import SMOTEN
+from pprint import pprint
 import xgboost as xgb
 ###KNN & Logistic & Complement NB & Decision Tree Testing
 from sklearn.neighbors import KNeighborsClassifier
@@ -26,6 +29,7 @@ from sklearn.metrics import mean_squared_error, confusion_matrix
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import ComplementNB
 from sklearn.ensemble import RandomForestClassifier
+
 
 # Concatenating Subsets
 # print("Concatenating subsets...")
@@ -254,6 +258,67 @@ print("After NCR undersampling, the class distribution is:")
 print(counter)
 
 
+# Random Search CV
+print("Random Search CV...")
+model = RandomForestClassifier()
+# repeated KFold repeats a single KFold process for n_repeats number of times
+# on each repeat, the KFolds are partitioned randomly 
+cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=0)
+# space defines the search space of your hyperparameters of interest
+space = dict()
+# whatever you're interested in tuning, add it to the search space as a dictionary item
+space['n_estimators'] = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
+space['max_features'] = ['auto', 'sqrt']
+my_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+my_depth.append(None)
+space['max_depth'] = my_depth
+space['min_samples_split'] = [2, 5, 10]
+space['min_samples_leaf'] = [1, 2, 4]
+space['bootstrap'] = [True, False]
+# a total of 4320 settings, calculated by multiplying the number of elements in each of the parameters
+pprint(space)
+# define a scoring that suits the problem of interest
+# randomized search CV runs for n_iter number of times, each time with a set of parameters randomly picked from the search space defined earlier
+# (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
+# since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
+# a KFold cross validation
+search = RandomizedSearchCV(estimator=model, param_distributions=space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=cv, random_state=0)
+# after everything is defined, fit the random search CV to training data to initiate the random search cv process
+# the output would 
+s_time = time.perf_counter()
+random_result = search.fit(X_train_full_fs, y_train_full)
+f_time = time.perf_counter()
+print('random search took: ' + str(f_time - s_time) + ' seconds')
+print('Best Score: %s' % random_result.best_score_)
+print('Best Hyperparameters: %s' % random_result.best_params_)
+# code be prints the parameters currently in use by a model
+# print('Parameters currently in use:\n')
+# pprint(rf.get_params())
+random_best_params = random_result.best_params_
+
+exit()
+
+# Grid Search CV
+print("Concentrated Grid Search CV from Random Search CV results...")
+# Set up Grid Search CV parameters by expanding in, both directions, the best parameter settings obtained in random search cv
+# e.g. best min_sample_leaf values is 4, check 3 and 5 in grid search
+# grid search searches every possible combination of parameter values that you specified
+grid_space = {}
+grid_search = GridSearchCV(estimator=model, param_distributions=grid_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=cv, random_state=0)
+grid_result = grid_search.fit(X_train_full_fs, y_train_full)
+print('Best Score: %s' % grid_result.best_score_)
+print('Best Hyperparameters: %s' % grid_result.best_params_)
+best_params = grid_result.best_params_
+
+
+
+
+
+
+
+
+
+
 # KNN & Logistic & Decision Tree & Complement Naive Bayes & Random Forest
 # X_train_full, X_validation_full, y_train_full, y_validation_full
 # KNN
@@ -341,7 +406,6 @@ def rfc(train_x, train_y, test_x, test_y):
     plt.show()
 print("RFC...")
 rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
-
 
 '''
 # Saving to Local
