@@ -257,20 +257,20 @@ counter = Counter(y_train_full)
 print("After NCR undersampling, the class distribution is:")
 print(counter)
 
-# make a small set
-train_temp = X_train_full_fs
-train_temp['target'] = y_train_full
-X_train_temp, X_validation_temp, y_train_temp, y_validation_temp = train_test_split(train_temp.drop(['target'], axis=1), 
-train_temp['target'], test_size=0.003, random_state=0, stratify=train_temp['target'])
-X_train_full_fs = X_validation_temp
-y_train_full = y_validation_temp
+# # make a small set
+# train_temp = X_train_full_fs
+# train_temp['target'] = y_train_full
+# X_train_temp, X_validation_temp, y_train_temp, y_validation_temp = train_test_split(train_temp.drop(['target'], axis=1), 
+# train_temp['target'], test_size=0.003, random_state=0, stratify=train_temp['target'])
+# X_train_full_fs = X_validation_temp
+# y_train_full = y_validation_temp
 
 # Saving to Local
 print("Saving to Local...")
-X_train_full_fs.to_csv("./data/X_train_big.csv")
-X_validation_full.to_csv("./data/X_validation_big.csv")
-y_train_full.to_csv("./data/Y_train_big.csv")
-y_validation_full.to_csv("./data/Y_validation_big.csv")
+X_train_full_fs.to_csv("./data/X_train_big.csv", index=False)
+X_validation_full.to_csv("./data/X_validation_big.csv", index=False)
+y_train_full.to_csv("./data/Y_train_big.csv", index=False)
+y_validation_full.to_csv("./data/Y_validation_big.csv", index=False)
 
 # X_train_full_fs.to_pickle("./data/X_train.pkl")
 # X_validation_full.to_pickle("./data/X_validation.pkl")
