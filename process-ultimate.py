@@ -44,14 +44,14 @@ print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
 
 
-# Analyzing NA Distribution & Count NAs
-print("Analyzing NA values distribution...")
-na_chart = msno.matrix(raw_df)
-na_chart_copy = na_chart.get_figure()
-na_chart_copy.savefig('output/na_chart.png', bbox_inches = 'tight')
-plt.close()
-# print(raw_df.shape)
-# print(raw_df.isnull().sum())
+# # Analyzing NA Distribution & Count NAs
+# print("Analyzing NA values distribution...")
+# na_chart = msno.matrix(raw_df)
+# na_chart_copy = na_chart.get_figure()
+# na_chart_copy.savefig('output/na_chart.png', bbox_inches = 'tight')
+# plt.close()
+# # print(raw_df.shape)
+# # print(raw_df.isnull().sum())
 
 
 # Subsetting Columns
@@ -112,13 +112,13 @@ raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype(int)
 # raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype("category")
 
 
-# Analyzing Distribution of Class Labels
-print("Analyzing distribution of class labels...")
-#print(raw_df['covid19_test_results'].value_counts())
-test_histo = raw_df['covid19_test_results'].hist()
-test_histo_copy = test_histo.get_figure()
-test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
-plt.close()
+# # Analyzing Distribution of Class Labels
+# print("Analyzing distribution of class labels...")
+# #print(raw_df['covid19_test_results'].value_counts())
+# test_histo = raw_df['covid19_test_results'].hist()
+# test_histo_copy = test_histo.get_figure()
+# test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
+# plt.close()
 
 
 # Train/Validation Split
@@ -258,6 +258,15 @@ print("After NCR undersampling, the class distribution is:")
 print(counter)
 
 
+# make a small set
+train_temp = X_train_full_fs
+train_temp['target'] = y_train_full
+X_train_temp, X_validation_temp, y_train_temp, y_validation_temp = train_test_split(train_temp.drop(['target'], axis=1), 
+train_temp['target'], test_size=0.003, random_state=0, stratify=train_temp['target'])
+X_train_full_fs = X_validation_temp
+y_train_full = y_validation_temp
+
+
 # Random Search CV
 print("Random Search CV...")
 model = RandomForestClassifier(n_jobs=-1)
@@ -295,6 +304,8 @@ print('Best Hyperparameters: %s' % random_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 random_best_params = random_result.best_params_
+
+
 
 exit()
 
