@@ -291,7 +291,7 @@ pprint(space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-search = RandomizedSearchCV(estimator=model, param_distributions=space, n_iter=2, scoring='f1_weighted', n_jobs=-1, cv=cv, random_state=0)
+search = RandomizedSearchCV(estimator=model, param_distributions=space, n_iter=10, scoring='f1_weighted', n_jobs=-1, cv=cv, random_state=0)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
