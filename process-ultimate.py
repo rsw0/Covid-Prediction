@@ -37,8 +37,8 @@ from sklearn.ensemble import RandomForestClassifier
 # all_files = glob.glob(os.path.join(path, "*.csv"))
 # concat_df = pd.concat((pd.read_csv(f) for f in all_files))
 # concat_df.to_csv('./data/raw_concatenated.csv', index=False)
-'''
 
+'''
 # Loading
 print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
@@ -276,16 +276,19 @@ y_validation_full.to_csv("./data/Y_validation_big.csv")
 # X_validation_full.to_pickle("./data/X_validation.pkl")
 # y_train_full.to_pickle("./data/Y_train.pkl")
 # y_validation_full.to_pickle("./data/Y_validation.pkl")
-
 '''
 
 
 # Read from Local
 print("Reading from local...")
 X_train_full_fs = pd.read_csv("./data/X_train.csv")
+X_train_full_fs = X_train_full_fs.astype(int)
 X_validation_full = pd.read_csv("./data/X_validation.csv")
+X_validation_full = X_validation_full.astype(int)
 y_train_full = pd.read_csv("./data/Y_train.csv")
+y_train_full = y_train_full.astype(int)
 y_validation_full = pd.read_csv("./data/Y_validation.csv")
+y_validation_full = y_validation_full.astype(int)
 
 
 # Random Search CV
