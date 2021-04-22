@@ -3,9 +3,9 @@ import os
 import glob
 import pandas as pd
 import numpy as np
-import missingno as msno
-import seaborn as sns
-import matplotlib.pyplot as plt
+# import missingno as msno
+# import seaborn as sns
+# import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
@@ -37,8 +37,8 @@ from sklearn.ensemble import RandomForestClassifier
 # all_files = glob.glob(os.path.join(path, "*.csv"))
 # concat_df = pd.concat((pd.read_csv(f) for f in all_files))
 # concat_df.to_csv('./data/raw_concatenated.csv', index=False)
-
 '''
+
 # Loading
 print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
@@ -191,8 +191,8 @@ def mi_select_no_graph():
 	mi_dict = sorted(mi_dict, key=mi_dict.get, reverse = True)
 	return mi_dict
 # two calls below are only used to create graphs. Actual repeated checking is done below
-chi2_dict = chi2_select()
-mi_dict = mi_select()
+# chi2_dict = chi2_select()
+# mi_dict = mi_select()
 # feature_set = set(mi_select_no_graph()[:18])
 # for rep_mi in range(17, 11, -1):
 # 	if rep_mi < 15:
@@ -267,19 +267,25 @@ y_train_full = y_validation_temp
 
 # Saving to Local
 print("Saving to Local...")
-X_train_full_fs.to_pickle("./data/X_train_big.pkl")
-X_validation_full.to_pickle("./data/X_validation_big.pkl")
-y_train_full.to_pickle("./data/Y_train_big.pkl")
-y_validation_full.to_pickle("./data/Y_validation_big.pkl")
+X_train_full_fs.to_csv("./data/X_train_big.csv")
+X_validation_full.to_csv("./data/X_validation_big.csv")
+y_train_full.to_csv("./data/Y_train_big.csv")
+y_validation_full.to_csv("./data/Y_validation_big.csv")
+
+# X_train_full_fs.to_pickle("./data/X_train.pkl")
+# X_validation_full.to_pickle("./data/X_validation.pkl")
+# y_train_full.to_pickle("./data/Y_train.pkl")
+# y_validation_full.to_pickle("./data/Y_validation.pkl")
 
 '''
 
+
 # Read from Local
 print("Reading from local...")
-X_train_full_fs = pd.read_pickle("./data/X_train.pkl")
-X_validation_full = pd.read_pickle("./data/X_validation.pkl")
-y_train_full = pd.read_pickle("./data/Y_train.pkl")
-y_validation_full = pd.read_pickle("./data/Y_validation.pkl")
+X_train_full_fs = pd.read_csv("./data/X_train.csv")
+X_validation_full = pd.read_csv("./data/X_validation.csv")
+y_train_full = pd.read_csv("./data/Y_train.csv")
+y_validation_full = pd.read_csv("./data/Y_validation.csv")
 
 
 # Random Search CV
