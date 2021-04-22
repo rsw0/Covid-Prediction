@@ -17,8 +17,8 @@ from sklearn.metrics import mean_squared_error, confusion_matrix
 from collections import Counter
 from imblearn.under_sampling import OneSidedSelection
 from imblearn.under_sampling import NeighbourhoodCleaningRule
+from imblearn.over_sampling import SMOTEN
 import xgboost as xgb
-
 ###KNN & Logistic & Complement NB & Decision Tree Testing
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
@@ -98,21 +98,14 @@ raw_df['covid19_test_results'] = raw_df['covid19_test_results'].replace({'negati
 # # use double brackets to get a df format instead of series. This way scalers will work
 
 
-# Converting to Categorical
-print("Converting to Categorical...")
-raw_df[string_col_list] = raw_df[string_col_list].astype("category")
-
-
 # Dropping All Remaining NA
 print("Creating full set for non-XGBoost methods...")
-counter = Counter(raw_df['covid19_test_results'])
-print(counter)
 raw_df_full = raw_df.drop(columns=['high_risk_interactions'])
 # raw_df = raw_df.replace({'None': np.nan, 'Other': np.nan})
 raw_df_full.dropna(inplace=True)
 string_col_list_1 = raw_df.drop(columns=['high_risk_interactions']).columns
 raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype(int)
-raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype("category")
+# raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype("category")
 
 
 # Analyzing Distribution of Class Labels
@@ -131,7 +124,20 @@ raw_df['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df[
 X_train_full, X_validation_full, y_train_full, y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
 raw_df_full['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df_full['covid19_test_results'])
 
-print(X_train_full.columns)
+
+# # Converting to Numerical for Resampling
+# print("Converting to numerical for resampling...")
+# X_train_full = pd.to_numeric(X_train_full, downcast='int')
+# y_train_full = pd.to_numeric(y_train_full, downcast='int')
+# print(X_train_full.dtypes)
+# print(y_train_full.dtypes)
+
+
+# # Converting to int for Feature Selection
+# print("Converting to int for feature selection...")
+# X_train_full = X_train_full.astype(int)
+# y_train_full = y_train_full.astype(int)
+
 
 # Feature Selection
 print("Feature selection...")
@@ -196,7 +202,6 @@ feature_set = [9, 10, 13, 14, 15, 16, 18, 19, 20]
 #        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
 #        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
 #        'runny_nose', 'muscle_sore', 'sore_throat', 'age_greater_than_55']
-
 X_train_full_colnames = X_train_full.columns
 fs_colnames = []
 for elem in feature_set:
@@ -213,32 +218,46 @@ X_validation_full_fs = X_validation_full[fs_colnames]
 # X_train_fs_post = pd.DataFrame(X_train_fs_post, columns = X_train_full.columns)
 # X_validation_fs_post = pd.DataFrame(X_validation_fs_post, columns = X_train_full.columns)
 
-print(X_train_full_fs.columns)
+
+# # Converting back to categorical for resampling
+# print("Converting back to categorical for resampling...")
+# X_train_full_fs = X_train_full_fs.astype("category")
+# y_train_full = y_train_full.astype("category")
+
+
+# Oversampling by SMOTEN (Variant of SMOTE on categorical, using VDM)
+print("Oversampling...")
+counter = Counter(y_train_full)
+print("Before oversampling, the class distribution is:")
+print(counter)
+class_dist = y_train_full.value_counts()
+desired_ratio = {0: class_dist[0], 1: class_dist[0]//5}
+oversample_smoten = SMOTEN(sampling_strategy=desired_ratio, random_state=0, n_jobs=-1)
+X_train_full_fs, y_train_full = oversample_smoten.fit_resample(X_train_full_fs, y_train_full)
+counter = Counter(y_train_full)
+print("After oversampling, the class distribution is:")
+print(counter)
 
 
 # Undersample with One-Sided Selection (Tomek Links + Condensed Nearest Neighbor)
 print("Undersampling...")
-# summarize class distribution
-counter = Counter(y_train_full)
-print(counter)
-undersample_oss = OneSidedSelection(n_neighbors=1, n_seeds_S=200)
+# n_seeds_S is the number of majority class to be added to set C, which is then used as a reference for a kNN on the remaining majority samples not in set C
+undersample_oss = OneSidedSelection(n_neighbors=1, n_seeds_S=counter[1], n_jobs=-1, random_state=0)
 X_train_full_fs, y_train_full = undersample_oss.fit_resample(X_train_full_fs, y_train_full)
 counter = Counter(y_train_full)
+print("After OSS undersampling, the class distribution is:")
 print(counter)
-undersample_ncr = NeighbourhoodCleaningRule(n_neighbors=3, threshold_cleaning=0.5)
+undersample_ncr = NeighbourhoodCleaningRule(n_neighbors=3, threshold_cleaning=0.5, n_jobs=-1)
 X_train_full_fs, y_train_full = undersample_ncr.fit_resample(X_train_full_fs, y_train_full)
 counter = Counter(y_train_full)
+print("After NCR undersampling, the class distribution is:")
 print(counter)
 
 
-# Oversampling by
-
-# from sklearn.linear_model import LogisticRegression   
-# Lr = LogisticRegression(class_weight='balanced')
-## KNN & Logistic & Random Forest & Complement Naive Bayes & Decision Tree 
+# KNN & Logistic & Decision Tree & Complement Naive Bayes & Random Forest
+# X_train_full, X_validation_full, y_train_full, y_validation_full
 # KNN
-#X_train_full, X_validation_full, y_train_full, y_validation_full
-print("Running Models")
+print("Running Models...")
 def knn(train_x, train_y, test_x, test_y):
     neigh = KNeighborsClassifier(n_neighbors=7, n_jobs=-1)
     neigh.fit(train_x, train_y)
@@ -252,10 +271,10 @@ def knn(train_x, train_y, test_x, test_y):
     plt.ylabel('True')
     plt.savefig('./output/KNN.png')
     plt.show()
-    
+print("KNN...")
 knn(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
-#logistic
+# Logistic
 def log(train_x, train_y, test_x, test_y):
     logi = LogisticRegression(n_jobs=-1)
     logi.fit(train_x, train_y)
@@ -269,11 +288,10 @@ def log(train_x, train_y, test_x, test_y):
     plt.ylabel('True')
     plt.savefig('./output/Logistic.png')
     plt.show()
-    
+print("LR...")
 log(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
-
-#decision tree
+# Decision Tree
 def dectree(train_x, train_y, test_x, test_y):
     logi = DecisionTreeClassifier()
     logi.fit(train_x, train_y)
@@ -287,10 +305,10 @@ def dectree(train_x, train_y, test_x, test_y):
     plt.ylabel('True')
     plt.savefig('./output/Decision_Tree.png')
     plt.show()
-    
+print("DT...")   
 dectree(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
-#Complement Naive Bayes
+# Complement Naive Bayes
 def cnb(train_x, train_y, test_x, test_y):
     logi = ComplementNB()
     logi.fit(train_x, train_y)
@@ -304,11 +322,10 @@ def cnb(train_x, train_y, test_x, test_y):
     plt.ylabel('True')
     plt.savefig('./output/CompNB.png')
     plt.show()
-    
+print("CNB..") 
 cnb(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
-
-#Random Forest Classifier
+# Random Forest Classifier
 def rfc(train_x, train_y, test_x, test_y):
     logi = RandomForestClassifier(n_jobs=-1)
     logi.fit(train_x, train_y)
@@ -322,8 +339,9 @@ def rfc(train_x, train_y, test_x, test_y):
     plt.ylabel('True')
     plt.savefig('./output/Random_Forest.png')
     plt.show()
-    
+print("RFC...")
 rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+
 
 '''
 # Saving to Local
