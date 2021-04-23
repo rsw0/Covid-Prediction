@@ -319,7 +319,7 @@ pprint(rf_space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=3, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
@@ -348,7 +348,7 @@ xgb_space["gamma"] = [0, 0.1, 0.3, 0.5]
 xgb_space["colsample_bytree"] = [0.5, 0.6, 0.7, 0.8]
 xgb_space["scale_pos_weight"] = [5]
 pprint(xgb_space)
-xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=3, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
+xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=2, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
 s1_time = time.perf_counter()
 xgb_result = xgb_search.fit(X_train_full_fs, y_train_full.values.ravel())
 f1_time = time.perf_counter()
