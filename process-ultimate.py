@@ -299,13 +299,13 @@ print("RF Random Search CV...")
 rf_model = RandomForestClassifier()
 # repeated KFold repeats a single KFold process for n_repeats number of times
 # on each repeat, the KFolds are partitioned randomly 
-rf_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
+rf_cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=seed)
 # space defines the search space of your hyperparameters of interest
 rf_space = dict()
 # whatever you're interested in tuning, add it to the search space as a dictionary item
 rf_space['n_estimators'] = [int(x) for x in np.linspace(start = 200, stop = 1500, num = 10)]
 rf_space['max_features'] = ['auto', 'sqrt']
-my_depth = [int(x) for x in np.linspace(10, 60, num = 11)]
+my_depth = [int(x) for x in np.linspace(10, 70, num = 11)]
 my_depth.append(None)
 rf_space['max_depth'] = my_depth
 rf_space['min_samples_split'] = [2, 5, 10]
@@ -319,7 +319,7 @@ pprint(rf_space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=1000, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
@@ -332,6 +332,9 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 dict_to_txt(rf_result.best_params_, "rf_best_params")
+
+
+exit()
 
 
 # XGBoost Random Search CV
