@@ -23,6 +23,10 @@ from sklearn.naive_bayes import ComplementNB
 from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error, confusion_matrix
+from datetime import datetime
+
+#Output file location
+wdir = "./output/dict_log.txt"
 
 # Setting Random Seed
 seed = 0
@@ -277,6 +281,28 @@ X_validation_full = X_validation_full.astype(int)
 y_train_full = y_train_full.astype(int)
 y_validation_full = y_validation_full.astype(int)
 
+def dict_to_txt(payload, title, wodir = wdir):
+    def add_txt_to_file(filename, content):
+        res = open(filename, "a")
+        for i in content:
+            res.write(str(i))
+            res.write("\n")
+        res.close()
+    #generate payload list
+    res = []
+    res.append("##########" + title + "##########")
+    t1 = str(datetime.now())
+    res.append("Report Created: " + t1)
+    res.append("\n")
+    
+    #loop through the dict
+    for key in payload:
+        stro = str(key) + " : " + str(payload[key])
+        res.append(stro)
+    res.append("#"*(len(title)+20))
+    #write file
+    add_txt_to_file(wodir, res)
+    
 
 # Random Forest Random Search CV
 print("RF Random Search CV...")
