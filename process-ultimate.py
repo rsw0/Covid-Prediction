@@ -323,7 +323,7 @@ rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space,
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
-rf_result = rf_search.fit(X_train_full_fs, y_train_full.ravel())
+rf_result = rf_search.fit(X_train_full_fs, y_train_full.values.ravel())
 f_time = time.perf_counter()
 print('random search took: ' + str(f_time - s_time) + ' seconds')
 print('Best Score: %s' % rf_result.best_score_)
@@ -350,7 +350,7 @@ xgb_space["scale_pos_weight"] = [5]
 pprint(xgb_space)
 xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=3, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
 s1_time = time.perf_counter()
-xgb_result = xgb_search.fit(X_train_full_fs, y_train_full.ravel())
+xgb_result = xgb_search.fit(X_train_full_fs, y_train_full.values.ravel())
 f1_time = time.perf_counter()
 print('random search took: ' + str(f1_time - s1_time) + ' seconds')
 print('Best Score: %s' % xgb_result.best_score_)
