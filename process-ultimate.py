@@ -3,33 +3,29 @@ import os
 import glob
 import pandas as pd
 import numpy as np
-# import missingno as msno
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import MinMaxScaler
+import missingno as msno
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest, chi2, mutual_info_classif
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import RepeatedStratifiedKFold
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import mean_squared_error, confusion_matrix
-from collections import Counter
 from imblearn.under_sampling import OneSidedSelection
 from imblearn.under_sampling import NeighbourhoodCleaningRule
 from imblearn.over_sampling import SMOTEN
+from collections import Counter
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 from pprint import pprint
-# import xgboost as xgb
-###KNN & Logistic & Complement NB & Decision Tree Testing
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import mean_squared_error, confusion_matrix
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import ComplementNB
 from sklearn.ensemble import RandomForestClassifier
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error, confusion_matrix
 
+# Setting Random Seed
+seed = 0
 
 # Concatenating Subsets
 # print("Concatenating subsets...")
@@ -44,14 +40,14 @@ print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
 
 
-# # Analyzing NA Distribution & Count NAs
-# print("Analyzing NA values distribution...")
-# na_chart = msno.matrix(raw_df)
-# na_chart_copy = na_chart.get_figure()
-# na_chart_copy.savefig('output/na_chart.png', bbox_inches = 'tight')
-# plt.close()
-# # print(raw_df.shape)
-# # print(raw_df.isnull().sum())
+# Analyzing NA Distribution & Count NAs
+print("Analyzing NA values distribution...")
+na_chart = msno.matrix(raw_df)
+na_chart_copy = na_chart.get_figure()
+na_chart_copy.savefig('output/na_chart.png', bbox_inches = 'tight')
+plt.close()
+# print(raw_df.shape)
+# print(raw_df.isnull().sum())
 
 
 # Subsetting Columns
@@ -110,38 +106,28 @@ raw_df_full.dropna(inplace=True)
 string_col_list_1 = raw_df.drop(columns=['high_risk_interactions']).columns
 raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype(int)
 # raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype("category")
+# raw_df_full[string_col_list_1] = pd.to_numeric(raw_df_full[string_col_list_1], downcast='int')
+# if you already have numeric dtypes (int8|16|32|64,float64,boolean), then you can use astype(int)
+# astype(int) doesn't handle string/objects. In that case, use to_numeric() instead
 
 
-# # Analyzing Distribution of Class Labels
-# print("Analyzing distribution of class labels...")
-# #print(raw_df['covid19_test_results'].value_counts())
-# test_histo = raw_df['covid19_test_results'].hist()
-# test_histo_copy = test_histo.get_figure()
-# test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
-# plt.close()
+# Analyzing Distribution of Class Labels
+print("Analyzing distribution of class labels...")
+#print(raw_df['covid19_test_results'].value_counts())
+test_histo = raw_df['covid19_test_results'].hist()
+test_histo_copy = test_histo.get_figure()
+test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
+plt.close()
 
 
 # Train/Validation Split
 print("Train/Validation Split...")
-X_train_boost, X_validation_boost, y_train_boost, y_validation_boost = train_test_split(raw_df.drop(['covid19_test_results'], axis=1), 
-raw_df['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df['covid19_test_results'])
+# X_train_boost, X_validation_boost, y_train_boost, y_validation_boost = train_test_split(raw_df.drop(['covid19_test_results'], axis=1), 
+# raw_df['covid19_test_results'], test_size=0.20, random_state=seed, stratify=raw_df['covid19_test_results'])
 X_train_full, X_validation_full, y_train_full, y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
-raw_df_full['covid19_test_results'], test_size=0.20, random_state=0, stratify=raw_df_full['covid19_test_results'])
+raw_df_full['covid19_test_results'], test_size=0.20, random_state=seed, stratify=raw_df_full['covid19_test_results'])
 
-
-# # Converting to Numerical for Resampling
-# print("Converting to numerical for resampling...")
-# X_train_full = pd.to_numeric(X_train_full, downcast='int')
-# y_train_full = pd.to_numeric(y_train_full, downcast='int')
-# print(X_train_full.dtypes)
-# print(y_train_full.dtypes)
-
-
-# # Converting to int for Feature Selection
-# print("Converting to int for feature selection...")
-# X_train_full = X_train_full.astype(int)
-# y_train_full = y_train_full.astype(int)
-
+print(X_train_full.columns)
 
 # Feature Selection
 print("Feature selection...")
@@ -191,17 +177,17 @@ def mi_select_no_graph():
 	mi_dict = sorted(mi_dict, key=mi_dict.get, reverse = True)
 	return mi_dict
 # two calls below are only used to create graphs. Actual repeated checking is done below
-# chi2_dict = chi2_select()
-# mi_dict = mi_select()
-# feature_set = set(mi_select_no_graph()[:18])
-# for rep_mi in range(17, 11, -1):
-# 	if rep_mi < 15:
-# 		temp_feature_set = set(mi_select_no_graph()[:15])
-# 		feature_set.intersection_update(temp_feature_set)
-# 	else:
-# 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
-# 		feature_set.intersection_update(temp_feature_set)
-feature_set = [9, 10, 13, 14, 15, 16, 18, 19, 20]
+chi2_dict = chi2_select()
+mi_dict = mi_select()
+feature_set = set(mi_select_no_graph()[:20])
+for rep_mi in range(19, 13, -1):
+	if rep_mi < 15:
+		temp_feature_set = set(mi_select_no_graph()[:15])
+		feature_set.intersection_update(temp_feature_set)
+	else:
+		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
+		feature_set.intersection_update(temp_feature_set)
+# feature_set = [0, 9, 10, 13, 14, 15, 16, 17, 18, 19]
 # ['high_risk_exposure_occupation', 'diabetes', 'chd', 'htn', 'cancer',
 #        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
 #        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
@@ -212,6 +198,7 @@ for elem in feature_set:
 	fs_colnames.append(X_train_full_colnames[elem])
 X_train_full_fs = X_train_full[fs_colnames]
 X_validation_full_fs = X_validation_full[fs_colnames]
+print(X_train_full_fs.columns)
 # can't use SelectKBest to transform, because you still want column names. SelectKBest returns a np array,
 # and transforming to pandas requires you to specify column names. You don't know which ones are which 
 # unless you manually look
@@ -236,7 +223,7 @@ print("Before oversampling, the class distribution is:")
 print(counter)
 class_dist = y_train_full.value_counts()
 desired_ratio = {0: class_dist[0], 1: class_dist[0]//5}
-oversample_smoten = SMOTEN(sampling_strategy=desired_ratio, random_state=0, n_jobs=-1)
+oversample_smoten = SMOTEN(sampling_strategy=desired_ratio, random_state=seed, n_jobs=-1)
 X_train_full_fs, y_train_full = oversample_smoten.fit_resample(X_train_full_fs, y_train_full)
 counter = Counter(y_train_full)
 print("After oversampling, the class distribution is:")
@@ -246,7 +233,7 @@ print(counter)
 # Undersample with One-Sided Selection (Tomek Links + Condensed Nearest Neighbor)
 print("Undersampling...")
 # n_seeds_S is the number of majority class to be added to set C, which is then used as a reference for a kNN on the remaining majority samples not in set C
-undersample_oss = OneSidedSelection(n_neighbors=1, n_seeds_S=counter[1], n_jobs=-1, random_state=0)
+undersample_oss = OneSidedSelection(n_neighbors=1, n_seeds_S=counter[1], n_jobs=-1, random_state=seed)
 X_train_full_fs, y_train_full = undersample_oss.fit_resample(X_train_full_fs, y_train_full)
 counter = Counter(y_train_full)
 print("After OSS undersampling, the class distribution is:")
@@ -256,79 +243,106 @@ X_train_full_fs, y_train_full = undersample_ncr.fit_resample(X_train_full_fs, y_
 counter = Counter(y_train_full)
 print("After NCR undersampling, the class distribution is:")
 print(counter)
+'''
 
 # # make a small set
 # train_temp = X_train_full_fs
 # train_temp['target'] = y_train_full
 # X_train_temp, X_validation_temp, y_train_temp, y_validation_temp = train_test_split(train_temp.drop(['target'], axis=1), 
-# train_temp['target'], test_size=0.003, random_state=0, stratify=train_temp['target'])
+# train_temp['target'], test_size=0.003, random_state=seed, stratify=train_temp['target'])
 # X_train_full_fs = X_validation_temp
 # y_train_full = y_validation_temp
 
 # Saving to Local
-print("Saving to Local...")
-X_train_full_fs.to_csv("./data/X_train_big.csv", index=False)
-X_validation_full.to_csv("./data/X_validation_big.csv", index=False)
-y_train_full.to_csv("./data/Y_train_big.csv", index=False)
-y_validation_full.to_csv("./data/Y_validation_big.csv", index=False)
-
+# print("Saving to Local in csv...")
+# X_train_full_fs.to_csv("./data/X_train_big.csv", index=False)
+# X_validation_full.to_csv("./data/X_validation_big.csv", index=False)
+# y_train_full.to_csv("./data/Y_train_big.csv", index=False)
+# y_validation_full.to_csv("./data/Y_validation_big.csv", index=False)
+#---------------------
 # X_train_full_fs.to_pickle("./data/X_train.pkl")
 # X_validation_full.to_pickle("./data/X_validation.pkl")
 # y_train_full.to_pickle("./data/Y_train.pkl")
 # y_validation_full.to_pickle("./data/Y_validation.pkl")
-'''
-
 
 # Read from Local
 print("Reading from local...")
 X_train_full_fs = pd.read_csv("./data/X_train.csv")
-X_train_full_fs = X_train_full_fs.astype(int)
 X_validation_full = pd.read_csv("./data/X_validation.csv")
-X_validation_full = X_validation_full.astype(int)
 y_train_full = pd.read_csv("./data/Y_train.csv")
-y_train_full = y_train_full.astype(int)
 y_validation_full = pd.read_csv("./data/Y_validation.csv")
+#-----------------------
+X_train_full_fs = X_train_full_fs.astype(int)
+X_validation_full = X_validation_full.astype(int)
+y_train_full = y_train_full.astype(int)
 y_validation_full = y_validation_full.astype(int)
 
 
-# Random Search CV
-print("Random Search CV...")
-model = RandomForestClassifier(n_jobs=-1)
+# Random Forest Random Search CV
+print("RF Random Search CV...")
+rf_model = RandomForestClassifier()
 # repeated KFold repeats a single KFold process for n_repeats number of times
 # on each repeat, the KFolds are partitioned randomly 
-cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=0)
+rf_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
 # space defines the search space of your hyperparameters of interest
-space = dict()
+rf_space = dict()
 # whatever you're interested in tuning, add it to the search space as a dictionary item
-space['n_estimators'] = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
-space['max_features'] = ['auto', 'sqrt']
-my_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+rf_space['n_estimators'] = [int(x) for x in np.linspace(start = 200, stop = 1500, num = 10)]
+rf_space['max_features'] = ['auto', 'sqrt']
+my_depth = [int(x) for x in np.linspace(10, 60, num = 11)]
 my_depth.append(None)
-space['max_depth'] = my_depth
-space['min_samples_split'] = [2, 5, 10]
-space['min_samples_leaf'] = [1, 2, 4]
-space['bootstrap'] = [True, False]
+rf_space['max_depth'] = my_depth
+rf_space['min_samples_split'] = [2, 5, 10]
+rf_space['min_samples_leaf'] = [1, 2, 4]
+rf_space['bootstrap'] = [True, False]
+rf_space['n_jobs'] = [-1]
 # a total of 4320 settings, calculated by multiplying the number of elements in each of the parameters
-pprint(space)
+pprint(rf_space)
 # define a scoring that suits the problem of interest
 # randomized search CV runs for n_iter number of times, each time with a set of parameters randomly picked from the search space defined earlier
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-search = RandomizedSearchCV(estimator=model, param_distributions=space, n_iter=10, scoring='f1_weighted', n_jobs=-1, cv=cv, random_state=0)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
-random_result = search.fit(X_train_full_fs, y_train_full)
+rf_result = rf_search.fit(X_train_full_fs, y_train_full)
 f_time = time.perf_counter()
 print('random search took: ' + str(f_time - s_time) + ' seconds')
-print('Best Score: %s' % random_result.best_score_)
-print('Best Hyperparameters: %s' % random_result.best_params_)
+print('Best Score: %s' % rf_result.best_score_)
+print('Best Hyperparameters: %s' % rf_result.best_params_)
 # code be prints the parameters currently in use by a model
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
-random_best_params = random_result.best_params_
+dict_to_txt(rf_result.best_params_, "rf_best_params")
 
+
+# XGBoost Random Search CV
+xgb_model = xgb.XGBClassifier()
+xgb_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
+xgb_space = dict()
+# whatever you're interested in tuning, add it to the search space as a dictionary item
+xgb_space['eta'] = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+my_depth1 = [3, 4, 5, 6, 8, 10, 12]
+my_depth1.append(None)
+xgb_space['max_depth'] = my_depth1
+xgb_space['min_child_weight'] = [1, 3, 4, 5]    #imbalanced class, leaf nodes can have smaller size groups
+xgb_space["gamma"] = [0, 0.1, 0.3, 0.5]
+xgb_space["colsample_bytree"] = [0.5, 0.6, 0.7, 0.8]
+xgb_space["scale_pos_weight"] = [5]
+pprint(xgb_space)
+xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
+s1_time = time.perf_counter()
+xgb_result = xgb_search.fit(X_train_full_fs, y_train_full)
+f1_time = time.perf_counter()
+print('random search took: ' + str(f1_time - s1_time) + ' seconds')
+print('Best Score: %s' % xgb_result.best_score_)
+print('Best Hyperparameters: %s' % xgb_result.best_params_)
+# code be prints the parameters currently in use by a model
+# print('Parameters currently in use:\n')
+# pprint(rf.get_params())
+dict_to_txt(xgb_result.best_params_, "xgb_best_params")
 
 
 exit()
@@ -339,18 +353,11 @@ print("Concentrated Grid Search CV from Random Search CV results...")
 # e.g. best min_sample_leaf values is 4, check 3 and 5 in grid search
 # grid search searches every possible combination of parameter values that you specified
 grid_space = {}
-grid_search = GridSearchCV(estimator=model, param_distributions=grid_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=cv, random_state=0)
+grid_search = GridSearchCV(estimator=rf_model, param_distributions=grid_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
 grid_result = grid_search.fit(X_train_full_fs, y_train_full)
 print('Best Score: %s' % grid_result.best_score_)
 print('Best Hyperparameters: %s' % grid_result.best_params_)
 best_params = grid_result.best_params_
-
-
-
-
-
-
-
 
 
 
