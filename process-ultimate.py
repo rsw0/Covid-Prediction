@@ -25,20 +25,22 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error, confusion_matrix
 from datetime import datetime
 
-#Output file location
+# Output file location
 wdir = "./output/dict_log.txt"
+
 
 # Setting Random Seed
 seed = 0
 
-# Concatenating Subsets
+'''
+# # Concatenating Subsets
 # print("Concatenating subsets...")
 # path = r'./data/carbon'
 # all_files = glob.glob(os.path.join(path, "*.csv"))
 # concat_df = pd.concat((pd.read_csv(f) for f in all_files))
 # concat_df.to_csv('./data/raw_concatenated.csv', index=False)
 
-'''
+
 # Loading
 print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
@@ -131,7 +133,6 @@ print("Train/Validation Split...")
 X_train_full, X_validation_full, y_train_full, y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
 raw_df_full['covid19_test_results'], test_size=0.20, random_state=seed, stratify=raw_df_full['covid19_test_results'])
 
-print(X_train_full.columns)
 
 # Feature Selection
 print("Feature selection...")
@@ -181,17 +182,17 @@ def mi_select_no_graph():
 	mi_dict = sorted(mi_dict, key=mi_dict.get, reverse = True)
 	return mi_dict
 # two calls below are only used to create graphs. Actual repeated checking is done below
-chi2_dict = chi2_select()
-mi_dict = mi_select()
-feature_set = set(mi_select_no_graph()[:20])
-for rep_mi in range(19, 13, -1):
-	if rep_mi < 15:
-		temp_feature_set = set(mi_select_no_graph()[:15])
-		feature_set.intersection_update(temp_feature_set)
-	else:
-		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
-		feature_set.intersection_update(temp_feature_set)
-# feature_set = [0, 9, 10, 13, 14, 15, 16, 17, 18, 19]
+# chi2_dict = chi2_select()
+# mi_dict = mi_select()
+# feature_set = set(mi_select_no_graph()[:20])
+# for rep_mi in range(19, 13, -1):
+# 	if rep_mi < 15:
+# 		temp_feature_set = set(mi_select_no_graph()[:15])
+# 		feature_set.intersection_update(temp_feature_set)
+# 	else:
+# 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
+# 		feature_set.intersection_update(temp_feature_set)
+feature_set = [0, 9, 10, 13, 14, 15, 16, 17, 18, 19]
 # ['high_risk_exposure_occupation', 'diabetes', 'chd', 'htn', 'cancer',
 #        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
 #        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
@@ -202,7 +203,6 @@ for elem in feature_set:
 	fs_colnames.append(X_train_full_colnames[elem])
 X_train_full_fs = X_train_full[fs_colnames]
 X_validation_full_fs = X_validation_full[fs_colnames]
-print(X_train_full_fs.columns)
 # can't use SelectKBest to transform, because you still want column names. SelectKBest returns a np array,
 # and transforming to pandas requires you to specify column names. You don't know which ones are which 
 # unless you manually look
@@ -212,12 +212,6 @@ print(X_train_full_fs.columns)
 # X_validation_fs_post = fs_post.transform(X_validation_full)
 # X_train_fs_post = pd.DataFrame(X_train_fs_post, columns = X_train_full.columns)
 # X_validation_fs_post = pd.DataFrame(X_validation_fs_post, columns = X_train_full.columns)
-
-
-# # Converting back to categorical for resampling
-# print("Converting back to categorical for resampling...")
-# X_train_full_fs = X_train_full_fs.astype("category")
-# y_train_full = y_train_full.astype("category")
 
 
 # Oversampling by SMOTEN (Variant of SMOTE on categorical, using VDM)
@@ -247,7 +241,7 @@ X_train_full_fs, y_train_full = undersample_ncr.fit_resample(X_train_full_fs, y_
 counter = Counter(y_train_full)
 print("After NCR undersampling, the class distribution is:")
 print(counter)
-'''
+
 
 # # make a small set
 # train_temp = X_train_full_fs
@@ -257,29 +251,26 @@ print(counter)
 # X_train_full_fs = X_validation_temp
 # y_train_full = y_validation_temp
 
+
 # Saving to Local
-# print("Saving to Local in csv...")
-# X_train_full_fs.to_csv("./data/X_train_big.csv", index=False)
-# X_validation_full.to_csv("./data/X_validation_big.csv", index=False)
-# y_train_full.to_csv("./data/Y_train_big.csv", index=False)
-# y_validation_full.to_csv("./data/Y_validation_big.csv", index=False)
-#---------------------
-# X_train_full_fs.to_pickle("./data/X_train.pkl")
-# X_validation_full.to_pickle("./data/X_validation.pkl")
-# y_train_full.to_pickle("./data/Y_train.pkl")
-# y_validation_full.to_pickle("./data/Y_validation.pkl")
+print("Saving to Local in csv...")
+X_train_full_fs.to_csv("./data/X_train.csv", index=False)
+X_validation_full_fs.to_csv("./data/X_validation.csv", index=False)
+y_train_full.to_csv("./data/Y_train.csv", index=False)
+y_validation_full.to_csv("./data/Y_validation.csv", index=False)
+'''
 
 # Read from Local
 print("Reading from local...")
 X_train_full_fs = pd.read_csv("./data/X_train.csv")
-X_validation_full = pd.read_csv("./data/X_validation.csv")
+X_validation_full_fs = pd.read_csv("./data/X_validation.csv")
 y_train_full = pd.read_csv("./data/Y_train.csv")
 y_validation_full = pd.read_csv("./data/Y_validation.csv")
-#-----------------------
 X_train_full_fs = X_train_full_fs.astype(int)
-X_validation_full = X_validation_full.astype(int)
+X_validation_full_fs = X_validation_full_fs.astype(int)
 y_train_full = y_train_full.astype(int)
 y_validation_full = y_validation_full.astype(int)
+
 
 def dict_to_txt(payload, title, wodir = wdir):
     def add_txt_to_file(filename, content):
@@ -294,7 +285,6 @@ def dict_to_txt(payload, title, wodir = wdir):
     t1 = str(datetime.now())
     res.append("Report Created: " + t1)
     res.append("\n")
-    
     #loop through the dict
     for key in payload:
         stro = str(key) + " : " + str(payload[key])
@@ -329,7 +319,7 @@ pprint(rf_space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=3, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
@@ -358,7 +348,7 @@ xgb_space["gamma"] = [0, 0.1, 0.3, 0.5]
 xgb_space["colsample_bytree"] = [0.5, 0.6, 0.7, 0.8]
 xgb_space["scale_pos_weight"] = [5]
 pprint(xgb_space)
-xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
+xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=3, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
 s1_time = time.perf_counter()
 xgb_result = xgb_search.fit(X_train_full_fs, y_train_full)
 f1_time = time.perf_counter()
