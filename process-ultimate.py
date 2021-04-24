@@ -319,7 +319,7 @@ pprint(rf_space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=1000, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
@@ -332,9 +332,6 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 dict_to_txt(rf_result.best_params_, "rf_best_params")
-
-
-exit()
 
 
 # XGBoost Random Search CV
