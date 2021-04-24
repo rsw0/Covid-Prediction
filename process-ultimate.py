@@ -332,29 +332,9 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 dict_to_txt(rf_result.best_params_, "rf_best_params")
-'''
-
-# Random Forest Classifier
-def rfc(train_x, train_y, test_x, test_y):
-    rforest = RandomForestClassifier(n_jobs=-1, n_estimators=1500, min_samples_split=10, min_samples_leaf=1, max_features='sqrt', max_depth=52, bootstrap=True)
-    rforest.fit(train_x, train_y)
-    y_predictions = rforest.predict(test_x)
-    print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
-    
-    cm = confusion_matrix(test_y, y_predictions, normalize='true')
-    sns.heatmap(cm, annot=True)
-    plt.title('Confusion matrix of the Random Forest classifier')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.savefig('./output/Random_Forest.png')
-    plt.show()
-print("RFC...")
-rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
 
 
-
-exit()
 
 # XGBoost Random Search CV
 xgb_model = xgb.XGBClassifier()
@@ -382,9 +362,6 @@ print('Best Hyperparameters: %s' % xgb_result.best_params_)
 # pprint(rf.get_params())
 dict_to_txt(xgb_result.best_params_, "xgb_best_params")
 
-
-exit()
-
 # Grid Search CV
 print("Concentrated Grid Search CV from Random Search CV results...")
 # Set up Grid Search CV parameters by expanding in, both directions, the best parameter settings obtained in random search cv
@@ -397,7 +374,7 @@ print('Best Score: %s' % grid_result.best_score_)
 print('Best Hyperparameters: %s' % grid_result.best_params_)
 best_params = grid_result.best_params_
 
-
+'''
 
 # KNN & Logistic & Decision Tree & Complement Naive Bayes & Random Forest
 # X_train_full, X_validation_full, y_train_full, y_validation_full
@@ -470,7 +447,22 @@ def cnb(train_x, train_y, test_x, test_y):
 print("CNB..") 
 cnb(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
-
+# Random Forest Classifier
+def rfc(train_x, train_y, test_x, test_y):
+    rforest = RandomForestClassifier(n_jobs=-1)
+    rforest.fit(train_x, train_y)
+    y_predictions = rforest.predict(test_x)
+    print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
+    
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Random Forest classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/Random_Forest.png')
+    plt.show()
+print("RFC...")
+rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
 
 
