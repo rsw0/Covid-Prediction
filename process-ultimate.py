@@ -293,7 +293,7 @@ def dict_to_txt(payload, title, wodir = wdir):
     #write file
     add_txt_to_file(wodir, res)
     
-
+'''
 # Random Forest Random Search CV
 print("RF Random Search CV...")
 rf_model = RandomForestClassifier()
@@ -319,7 +319,7 @@ pprint(rf_space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2000, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
@@ -332,7 +332,29 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 dict_to_txt(rf_result.best_params_, "rf_best_params")
+'''
 
+# Random Forest Classifier
+def rfc(train_x, train_y, test_x, test_y):
+    rforest = RandomForestClassifier(n_jobs=-1, n_estimators=1500, min_samples_split=10, min_samples_leaf=1, max_features='sqrt', max_depth=52, bootstrap=True)
+    rforest.fit(train_x, train_y)
+    y_predictions = rforest.predict(test_x)
+    print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
+    
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Random Forest classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/Random_Forest.png')
+    plt.show()
+print("RFC...")
+rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+
+
+
+
+exit()
 
 # XGBoost Random Search CV
 xgb_model = xgb.XGBClassifier()
@@ -447,23 +469,6 @@ def cnb(train_x, train_y, test_x, test_y):
     plt.show()
 print("CNB..") 
 cnb(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
-
-# Random Forest Classifier
-def rfc(train_x, train_y, test_x, test_y):
-    logi = RandomForestClassifier(n_jobs=-1)
-    logi.fit(train_x, train_y)
-    y_predictions = logi.predict(test_x)
-    print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
-    
-    cm = confusion_matrix(test_y, y_predictions, normalize='true')
-    sns.heatmap(cm, annot=True)
-    plt.title('Confusion matrix of the Random Forest classifier')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.savefig('./output/Random_Forest.png')
-    plt.show()
-print("RFC...")
-rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
 
 
