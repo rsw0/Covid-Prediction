@@ -192,7 +192,7 @@ def mi_select_no_graph():
 # 	else:
 # 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
 # 		feature_set.intersection_update(temp_feature_set)
-feature_set = [0, 9, 10, 13, 14, 15, 16, 17, 18, 19]
+feature_set = [9, 10, 13, 14, 15, 16, 17, 18, 19, 20]
 # ['high_risk_exposure_occupation', 'diabetes', 'chd', 'htn', 'cancer',
 #        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
 #        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
@@ -334,8 +334,7 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 dict_to_txt(rf_result.best_params_, "rf_best_params")
 
 
-
-
+'''
 # XGBoost Random Search CV
 xgb_model = xgb.XGBClassifier()
 xgb_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
@@ -350,7 +349,7 @@ xgb_space["gamma"] = [0, 0.1, 0.3, 0.5]
 xgb_space["colsample_bytree"] = [0.5, 0.6, 0.7, 0.8]
 xgb_space["scale_pos_weight"] = [5]
 pprint(xgb_space)
-xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=2, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
+xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=1, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
 s1_time = time.perf_counter()
 xgb_result = xgb_search.fit(X_train_full_fs, y_train_full.values.ravel())
 f1_time = time.perf_counter()
@@ -362,6 +361,7 @@ print('Best Hyperparameters: %s' % xgb_result.best_params_)
 # pprint(rf.get_params())
 dict_to_txt(xgb_result.best_params_, "xgb_best_params")
 
+'''
 # Grid Search CV
 print("Concentrated Grid Search CV from Random Search CV results...")
 # Set up Grid Search CV parameters by expanding in, both directions, the best parameter settings obtained in random search cv
@@ -375,7 +375,7 @@ print('Best Hyperparameters: %s' % grid_result.best_params_)
 best_params = grid_result.best_params_
 
 '''
-
+'''
 # KNN & Logistic & Decision Tree & Complement Naive Bayes & Random Forest
 # X_train_full, X_validation_full, y_train_full, y_validation_full
 # KNN
@@ -464,7 +464,7 @@ def rfc(train_x, train_y, test_x, test_y):
 print("RFC...")
 rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
-
+'''
 
 '''
 # time
