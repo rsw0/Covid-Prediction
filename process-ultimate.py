@@ -32,7 +32,7 @@ wdir = "./output/dict_log.txt"
 # Setting Random Seed
 seed = 0
 
-'''
+
 # # Concatenating Subsets
 # print("Concatenating subsets...")
 # path = r'./data/carbon'
@@ -40,7 +40,7 @@ seed = 0
 # concat_df = pd.concat((pd.read_csv(f) for f in all_files))
 # concat_df.to_csv('./data/raw_concatenated.csv', index=False)
 
-
+'''
 # Loading
 print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
@@ -186,13 +186,13 @@ def mi_select_no_graph():
 # mi_dict = mi_select()
 # feature_set = set(mi_select_no_graph()[:20])
 # for rep_mi in range(19, 13, -1):
-# 	if rep_mi < 15:
-# 		temp_feature_set = set(mi_select_no_graph()[:15])
-# 		feature_set.intersection_update(temp_feature_set)
-# 	else:
-# 		temp_feature_set = set(mi_select_no_graph()[:rep_mi])
-# 		feature_set.intersection_update(temp_feature_set)
-feature_set = [9, 10, 13, 14, 15, 16, 17, 18, 19, 20]
+#     if rep_mi < 15:
+#         temp_feature_set = set(mi_select_no_graph()[:15])
+#         feature_set.intersection_update(temp_feature_set)
+#     else:
+#         temp_feature_set = set(mi_select_no_graph()[:rep_mi])
+#         feature_set.intersection_update(temp_feature_set)
+feature_set = [9, 10, 13, 14, 15, 16, 18, 19]
 # ['high_risk_exposure_occupation', 'diabetes', 'chd', 'htn', 'cancer',
 #        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
 #        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
@@ -200,9 +200,10 @@ feature_set = [9, 10, 13, 14, 15, 16, 17, 18, 19, 20]
 X_train_full_colnames = X_train_full.columns
 fs_colnames = []
 for elem in feature_set:
-	fs_colnames.append(X_train_full_colnames[elem])
+    fs_colnames.append(X_train_full_colnames[elem])
 X_train_full_fs = X_train_full[fs_colnames]
 X_validation_full_fs = X_validation_full[fs_colnames]
+print(X_train_full_fs.columns)
 # can't use SelectKBest to transform, because you still want column names. SelectKBest returns a np array,
 # and transforming to pandas requires you to specify column names. You don't know which ones are which 
 # unless you manually look
@@ -220,7 +221,7 @@ counter = Counter(y_train_full)
 print("Before oversampling, the class distribution is:")
 print(counter)
 class_dist = y_train_full.value_counts()
-desired_ratio = {0: class_dist[0], 1: class_dist[0]//5}
+desired_ratio = {0: class_dist[0], 1: class_dist[0]//3}
 oversample_smoten = SMOTEN(sampling_strategy=desired_ratio, random_state=seed, n_jobs=-1)
 X_train_full_fs, y_train_full = oversample_smoten.fit_resample(X_train_full_fs, y_train_full)
 counter = Counter(y_train_full)
@@ -293,7 +294,7 @@ def dict_to_txt(payload, title, wodir = wdir):
     #write file
     add_txt_to_file(wodir, res)
     
-'''
+
 # Random Forest Random Search CV
 print("RF Random Search CV...")
 rf_model = RandomForestClassifier()
@@ -319,7 +320,7 @@ pprint(rf_space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2000, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2000, scoring='f1_macro', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
@@ -334,7 +335,6 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 dict_to_txt(rf_result.best_params_, "rf_best_params")
 
 
-'''
 # XGBoost Random Search CV
 xgb_model = xgb.XGBClassifier()
 xgb_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
@@ -349,7 +349,7 @@ xgb_space["gamma"] = [0, 0.1, 0.3, 0.5]
 xgb_space["colsample_bytree"] = [0.5, 0.6, 0.7, 0.8]
 xgb_space["scale_pos_weight"] = [5]
 pprint(xgb_space)
-xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=1, scoring='f1_weighted', n_jobs=-1, cv=xgb_cv, random_state=seed)
+xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=500, scoring='f1_macro', n_jobs=-1, cv=xgb_cv, random_state=seed)
 s1_time = time.perf_counter()
 xgb_result = xgb_search.fit(X_train_full_fs, y_train_full.values.ravel())
 f1_time = time.perf_counter()
@@ -361,6 +361,8 @@ print('Best Hyperparameters: %s' % xgb_result.best_params_)
 # pprint(rf.get_params())
 dict_to_txt(xgb_result.best_params_, "xgb_best_params")
 
+
+
 '''
 # Grid Search CV
 print("Concentrated Grid Search CV from Random Search CV results...")
@@ -368,14 +370,13 @@ print("Concentrated Grid Search CV from Random Search CV results...")
 # e.g. best min_sample_leaf values is 4, check 3 and 5 in grid search
 # grid search searches every possible combination of parameter values that you specified
 grid_space = {}
-grid_search = GridSearchCV(estimator=rf_model, param_distributions=grid_space, n_iter=500, scoring='f1_weighted', n_jobs=-1, cv=rf_cv, random_state=seed)
+grid_search = GridSearchCV(estimator=rf_model, param_distributions=grid_space, n_iter=500, scoring='f1_macro', n_jobs=-1, cv=rf_cv, random_state=seed)
 grid_result = grid_search.fit(X_train_full_fs, y_train_full)
 print('Best Score: %s' % grid_result.best_score_)
 print('Best Hyperparameters: %s' % grid_result.best_params_)
 best_params = grid_result.best_params_
 
-'''
-'''
+
 # KNN & Logistic & Decision Tree & Complement Naive Bayes & Random Forest
 # X_train_full, X_validation_full, y_train_full, y_validation_full
 # KNN
