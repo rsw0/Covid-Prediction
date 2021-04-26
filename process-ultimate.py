@@ -4,6 +4,7 @@ import glob
 import pandas as pd
 import numpy as np
 import missingno as msno
+from scipy.sparse.construct import random
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -21,6 +22,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import ComplementNB
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import LocalOutlierFactor
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error, confusion_matrix, f1_score
 from datetime import datetime
@@ -40,7 +44,7 @@ seed = 0
 # concat_df = pd.concat((pd.read_csv(f) for f in all_files))
 # concat_df.to_csv('./data/raw_concatenated.csv', index=False)
 
-'''
+
 # Loading
 print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
@@ -131,7 +135,7 @@ print("Train/Validation Split...")
 # X_train_boost, X_validation_boost, y_train_boost, y_validation_boost = train_test_split(raw_df.drop(['covid19_test_results'], axis=1), 
 # raw_df['covid19_test_results'], test_size=0.20, random_state=seed, stratify=raw_df['covid19_test_results'])
 X_train_full, X_validation_full, y_train_full, y_validation_full = train_test_split(raw_df_full.drop(['covid19_test_results'], axis=1), 
-raw_df_full['covid19_test_results'], test_size=0.20, random_state=seed, stratify=raw_df_full['covid19_test_results'])
+raw_df_full['covid19_test_results'], test_size=0.2, random_state=seed, stratify=raw_df_full['covid19_test_results'])
 
 
 # Feature Selection
@@ -215,6 +219,25 @@ print(X_train_full_fs.columns)
 # X_validation_fs_post = pd.DataFrame(X_validation_fs_post, columns = X_train_full.columns)
 
 
+# clf = IsolationForest(n_estimators=500, max_features=6, bootstrap=True, n_jobs=-1, random_state=0, warm_start=True).fit(X_train_full_fs)
+# y_pred = clf.predict(X_validation_full_fs)
+# for hhh in range(len(y_pred)):
+#     if y_pred[hhh] == 1:
+#         y_pred[hhh] = 0
+#     else:
+#         y_pred[hhh] = 1
+# my_f1 = f1_score(y_validation_full, y_pred, average='macro')
+# print("f1_macro for Isolation Forest Classifier = ", my_f1)
+# cm = confusion_matrix(y_validation_full, y_pred, normalize='true')
+# sns.heatmap(cm, annot=True)
+# plt.title('Confusion matrix of the Isolation Forest classifier')
+# plt.xlabel('Predicted')
+# plt.ylabel('True')
+# plt.savefig('./output/Random_Forest.png')
+# plt.show()
+
+
+
 # Oversampling by SMOTEN (Variant of SMOTE on categorical, using VDM)
 print("Oversampling...")
 counter = Counter(y_train_full)
@@ -259,7 +282,7 @@ X_train_full_fs.to_csv("./data/X_train.csv", index=False)
 X_validation_full_fs.to_csv("./data/X_validation.csv", index=False)
 y_train_full.to_csv("./data/Y_train.csv", index=False)
 y_validation_full.to_csv("./data/Y_validation.csv", index=False)
-'''
+
 
 # Read from Local
 print("Reading from local...")
@@ -293,7 +316,26 @@ def dict_to_txt(payload, title, wodir = wdir):
     res.append("#"*(len(title)+20))
     #write file
     add_txt_to_file(wodir, res)
-    
+
+
+def rfc(train_x, train_y, test_x, test_y):
+    rforest = RandomForestClassifier(n_jobs=-1)
+    rforest.fit(train_x, train_y)
+    y_predictions = rforest.predict(test_x)
+    print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
+    my_f1 = f1_score(test_y, y_predictions, average='macro')
+    print("f1_macro for Random Forest Classifier = ", my_f1)
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Random Forest classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/Random_Forest.png')
+    plt.show()
+print("RFC...")
+rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+
+
 '''
 # Testing best parameters
 def rfc(train_x, train_y, test_x, test_y):
