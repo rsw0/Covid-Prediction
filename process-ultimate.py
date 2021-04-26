@@ -22,7 +22,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import ComplementNB
 from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb
-from sklearn.metrics import mean_squared_error, confusion_matrix
+from sklearn.metrics import mean_squared_error, confusion_matrix, f1_score
 from datetime import datetime
 
 # Output file location
@@ -182,8 +182,8 @@ def mi_select_no_graph():
 	mi_dict = sorted(mi_dict, key=mi_dict.get, reverse = True)
 	return mi_dict
 # two calls below are only used to create graphs. Actual repeated checking is done below
-# chi2_dict = chi2_select()
-# mi_dict = mi_select()
+chi2_dict = chi2_select()
+mi_dict = mi_select()
 # feature_set = set(mi_select_no_graph()[:20])
 # for rep_mi in range(19, 13, -1):
 #     if rep_mi < 15:
@@ -192,7 +192,7 @@ def mi_select_no_graph():
 #     else:
 #         temp_feature_set = set(mi_select_no_graph()[:rep_mi])
 #         feature_set.intersection_update(temp_feature_set)
-feature_set = [9, 10, 13, 14, 15, 16, 18, 19]
+feature_set = [9, 10, 14, 15, 16, 18]
 # ['high_risk_exposure_occupation', 'diabetes', 'chd', 'htn', 'cancer',
 #        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
 #        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
@@ -294,7 +294,28 @@ def dict_to_txt(payload, title, wodir = wdir):
     #write file
     add_txt_to_file(wodir, res)
     
+'''
+# Testing best parameters
+def rfc(train_x, train_y, test_x, test_y):
+    rforest = RandomForestClassifier(n_jobs=-1, n_estimators=922, min_samples_split=5, min_samples_leaf=1, max_features='sqrt', max_depth=40, bootstrap=True)
+    rforest.fit(train_x, train_y)
+    y_predictions = rforest.predict(test_x)
+    print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
+    my_f1 = f1_score(test_y, y_predictions, average='macro')
+    print("f1_macro for Random Forest Classifier = ", my_f1)
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the Random Forest classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/Random_Forest.png')
+    plt.show()
+print("RFC...")
+rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
+'''
 
+
+'''
 # Random Forest Random Search CV
 print("RF Random Search CV...")
 rf_model = RandomForestClassifier()
@@ -334,7 +355,9 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 # pprint(rf.get_params())
 dict_to_txt(rf_result.best_params_, "rf_best_params")
 
+'''
 
+'''
 # XGBoost Random Search CV
 xgb_model = xgb.XGBClassifier()
 xgb_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
@@ -360,7 +383,7 @@ print('Best Hyperparameters: %s' % xgb_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 dict_to_txt(xgb_result.best_params_, "xgb_best_params")
-
+'''
 
 
 '''
@@ -375,8 +398,9 @@ grid_result = grid_search.fit(X_train_full_fs, y_train_full)
 print('Best Score: %s' % grid_result.best_score_)
 print('Best Hyperparameters: %s' % grid_result.best_params_)
 best_params = grid_result.best_params_
+'''
 
-
+'''
 # KNN & Logistic & Decision Tree & Complement Naive Bayes & Random Forest
 # X_train_full, X_validation_full, y_train_full, y_validation_full
 # KNN
@@ -448,13 +472,13 @@ def cnb(train_x, train_y, test_x, test_y):
 print("CNB..") 
 cnb(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
-# Random Forest Classifier
 def rfc(train_x, train_y, test_x, test_y):
     rforest = RandomForestClassifier(n_jobs=-1)
     rforest.fit(train_x, train_y)
     y_predictions = rforest.predict(test_x)
     print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
-    
+    my_f1 = f1_score(test_y, y_predictions, average='macro')
+    print("f1_macro for Random Forest Classifier = ", my_f1)
     cm = confusion_matrix(test_y, y_predictions, normalize='true')
     sns.heatmap(cm, annot=True)
     plt.title('Confusion matrix of the Random Forest classifier')
@@ -464,7 +488,6 @@ def rfc(train_x, train_y, test_x, test_y):
     plt.show()
 print("RFC...")
 rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
-
 '''
 
 '''
