@@ -21,6 +21,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import ComplementNB
+from sklearn.naive_bayes import CategoricalNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import IsolationForest
@@ -36,7 +37,6 @@ wdir = "./output/dict_log.txt"
 # Setting Random Seed
 seed = 0
 
-
 # # Concatenating Subsets
 # print("Concatenating subsets...")
 # path = r'./data/carbon'
@@ -44,7 +44,7 @@ seed = 0
 # concat_df = pd.concat((pd.read_csv(f) for f in all_files))
 # concat_df.to_csv('./data/raw_concatenated.csv', index=False)
 
-
+'''
 # Loading
 print("Loading data...")
 raw_df = pd.read_csv("./data/raw_concatenated.csv")
@@ -237,14 +237,13 @@ print(X_train_full_fs.columns)
 # plt.show()
 
 
-
 # Oversampling by SMOTEN (Variant of SMOTE on categorical, using VDM)
 print("Oversampling...")
 counter = Counter(y_train_full)
 print("Before oversampling, the class distribution is:")
 print(counter)
 class_dist = y_train_full.value_counts()
-desired_ratio = {0: class_dist[0], 1: class_dist[0]//3}
+desired_ratio = {0: class_dist[0], 1: class_dist[0]//5}
 oversample_smoten = SMOTEN(sampling_strategy=desired_ratio, random_state=seed, n_jobs=-1)
 X_train_full_fs, y_train_full = oversample_smoten.fit_resample(X_train_full_fs, y_train_full)
 counter = Counter(y_train_full)
@@ -282,7 +281,7 @@ X_train_full_fs.to_csv("./data/X_train.csv", index=False)
 X_validation_full_fs.to_csv("./data/X_validation.csv", index=False)
 y_train_full.to_csv("./data/Y_train.csv", index=False)
 y_validation_full.to_csv("./data/Y_validation.csv", index=False)
-
+'''
 
 # Read from Local
 print("Reading from local...")
@@ -317,7 +316,7 @@ def dict_to_txt(payload, title, wodir = wdir):
     #write file
     add_txt_to_file(wodir, res)
 
-
+'''
 def rfc(train_x, train_y, test_x, test_y):
     rforest = RandomForestClassifier(n_jobs=-1)
     rforest.fit(train_x, train_y)
@@ -334,7 +333,7 @@ def rfc(train_x, train_y, test_x, test_y):
     plt.show()
 print("RFC...")
 rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
-
+'''
 
 '''
 # Testing best parameters
@@ -357,19 +356,19 @@ rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 '''
 
 
-'''
+
 # Random Forest Random Search CV
 print("RF Random Search CV...")
 rf_model = RandomForestClassifier()
 # repeated KFold repeats a single KFold process for n_repeats number of times
 # on each repeat, the KFolds are partitioned randomly 
-rf_cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=seed)
+rf_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
 # space defines the search space of your hyperparameters of interest
 rf_space = dict()
 # whatever you're interested in tuning, add it to the search space as a dictionary item
 rf_space['n_estimators'] = [int(x) for x in np.linspace(start = 200, stop = 1500, num = 10)]
 rf_space['max_features'] = ['auto', 'sqrt']
-my_depth = [int(x) for x in np.linspace(10, 70, num = 11)]
+my_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
 my_depth.append(None)
 rf_space['max_depth'] = my_depth
 rf_space['min_samples_split'] = [2, 5, 10]
@@ -383,7 +382,7 @@ pprint(rf_space)
 # (or that the set of parameter setting tried by the algorithm is given by n_iter). Each set of parameters is a random sample from the grid/search space
 # since we're ysing repeated k folds, each set of parameters is cross validated for n_repeats number of times (defined in cv), and each time it is
 # a KFold cross validation
-rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2000, scoring='f1_macro', n_jobs=-1, cv=rf_cv, random_state=seed)
+rf_search = RandomizedSearchCV(estimator=rf_model, param_distributions=rf_space, n_iter=2000, scoring='f1_micro', n_jobs=-1, cv=rf_cv, random_state=seed)
 # after everything is defined, fit the random search CV to training data to initiate the random search cv process
 # the output would 
 s_time = time.perf_counter()
@@ -396,36 +395,6 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 dict_to_txt(rf_result.best_params_, "rf_best_params")
-
-'''
-
-'''
-# XGBoost Random Search CV
-xgb_model = xgb.XGBClassifier()
-xgb_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
-xgb_space = dict()
-# whatever you're interested in tuning, add it to the search space as a dictionary item
-xgb_space['eta'] = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
-my_depth1 = [3, 4, 5, 6, 8, 10, 12]
-my_depth1.append(None)
-xgb_space['max_depth'] = my_depth1
-xgb_space['min_child_weight'] = [1, 3, 4, 5]    #imbalanced class, leaf nodes can have smaller size groups
-xgb_space["gamma"] = [0, 0.1, 0.3, 0.5]
-xgb_space["colsample_bytree"] = [0.5, 0.6, 0.7, 0.8]
-xgb_space["scale_pos_weight"] = [5]
-pprint(xgb_space)
-xgb_search = RandomizedSearchCV(estimator=xgb_model, param_distributions=xgb_space, n_iter=500, scoring='f1_macro', n_jobs=-1, cv=xgb_cv, random_state=seed)
-s1_time = time.perf_counter()
-xgb_result = xgb_search.fit(X_train_full_fs, y_train_full.values.ravel())
-f1_time = time.perf_counter()
-print('random search took: ' + str(f1_time - s1_time) + ' seconds')
-print('Best Score: %s' % xgb_result.best_score_)
-print('Best Hyperparameters: %s' % xgb_result.best_params_)
-# code be prints the parameters currently in use by a model
-# print('Parameters currently in use:\n')
-# pprint(rf.get_params())
-dict_to_txt(xgb_result.best_params_, "xgb_best_params")
-'''
 
 
 '''
@@ -452,7 +421,8 @@ def knn(train_x, train_y, test_x, test_y):
     neigh.fit(train_x, train_y)
     y_predictions = neigh.predict(test_x)
     print("RMSE for KNN model = ", mean_squared_error(test_y, y_predictions))
-    
+    my_f1 = f1_score(test_y, y_predictions, average='macro')
+    print("f1_macro for kNN Classifer = ", my_f1)
     cm = confusion_matrix(test_y, y_predictions, normalize='true')
     sns.heatmap(cm, annot=True)
     plt.title('Confusion matrix of the KNN classifier')
@@ -469,7 +439,8 @@ def log(train_x, train_y, test_x, test_y):
     logi.fit(train_x, train_y)
     y_predictions = logi.predict(test_x)
     print("RMSE for Logistic model = ", mean_squared_error(test_y, y_predictions))
-    
+    my_f1 = f1_score(test_y, y_predictions, average='macro')
+    print("f1_macro for Logistic Classifier = ", my_f1)
     cm = confusion_matrix(test_y, y_predictions, normalize='true')
     sns.heatmap(cm, annot=True)
     plt.title('Confusion matrix of the Logistic classifier')
@@ -482,11 +453,12 @@ log(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
 # Decision Tree
 def dectree(train_x, train_y, test_x, test_y):
-    logi = DecisionTreeClassifier()
-    logi.fit(train_x, train_y)
-    y_predictions = logi.predict(test_x)
+    dect = DecisionTreeClassifier()
+    dect.fit(train_x, train_y)
+    y_predictions = dect.predict(test_x)
     print("RMSE for Decision Tree model = ", mean_squared_error(test_y, y_predictions))
-    
+    my_f1 = f1_score(test_y, y_predictions, average='macro')
+    print("f1_macro for Decision Tree = ", my_f1)
     cm = confusion_matrix(test_y, y_predictions, normalize='true')
     sns.heatmap(cm, annot=True)
     plt.title('Confusion matrix of the Decision Tree classifier')
@@ -499,14 +471,15 @@ dectree(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 
 # Complement Naive Bayes
 def cnb(train_x, train_y, test_x, test_y):
-    logi = ComplementNB()
-    logi.fit(train_x, train_y)
-    y_predictions = logi.predict(test_x)
+    compnb =  CategoricalNB()
+    compnb.fit(train_x, train_y)
+    y_predictions = compnb.predict(test_x)
     print("RMSE for Complement Naive Bayes model = ", mean_squared_error(test_y, y_predictions))
-    
+    my_f1 = f1_score(test_y, y_predictions, average='macro')
+    print("f1_macro for Categorical Naive Bayes Classifier = ", my_f1)
     cm = confusion_matrix(test_y, y_predictions, normalize='true')
     sns.heatmap(cm, annot=True)
-    plt.title('Confusion matrix of the Complement Naive Bayes classifier')
+    plt.title('Confusion matrix of the Categorical Naive Bayes classifier')
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.savefig('./output/CompNB.png')
@@ -530,11 +503,21 @@ def rfc(train_x, train_y, test_x, test_y):
     plt.show()
 print("RFC...")
 rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
-'''
 
-'''
-# time
-tfidf_s_time = time.perf_counter()
-tfidf_f_time = time.perf_counter()
-print('tfidf vectorizer took: ' + str(tfidf_f_time - tfidf_s_time) + ' seconds')
+def xgboo(train_x, train_y, test_x, test_y):
+    xgb_model = xgb.XGBClassifier()
+    xgb_model.fit(train_x, train_y)
+    y_predictions = xgb_model.predict(test_x)
+    print("RMSE for XGBoost Classifier = ", mean_squared_error(test_y, y_predictions))
+    my_f1 = f1_score(test_y, y_predictions)
+    print("f1_macro for XGBoost = ", my_f1)
+    cm = confusion_matrix(test_y, y_predictions, normalize='true')
+    sns.heatmap(cm, annot=True)
+    plt.title('Confusion matrix of the XGBoost classifier')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig('./output/xgboost.png')
+    plt.show()
+print("XGBoost...")
+xgboo(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 '''
