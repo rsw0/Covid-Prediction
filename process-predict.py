@@ -69,7 +69,7 @@ raw_df = raw_df.drop(columns=['batch_date', 'swab_type', 'test_name', 'temperatu
 
 # Age to Categorical
 print("Converting Age to binary...")
-raw_df['age_greater_than_55'] = np.where(raw_df['age'] > 55, 1, 0)
+raw_df['age_greater_than_60'] = np.where(raw_df['age'] > 60, 1, 0)
 raw_df = raw_df.drop(columns=['age'])
 
 
@@ -123,8 +123,8 @@ raw_df_full[string_col_list_1] = raw_df_full[string_col_list_1].astype(int)
 
 # Analyzing Distribution of Class Labels
 print("Analyzing distribution of class labels...")
-#print(raw_df['covid19_test_results'].value_counts())
-test_histo = raw_df['covid19_test_results'].hist()
+#print(raw_df_full['covid19_test_results'].value_counts())
+test_histo = raw_df_full['covid19_test_results'].hist()
 test_histo_copy = test_histo.get_figure()
 test_histo_copy.savefig('output/test_histo.png', bbox_inches = 'tight')
 plt.close()
@@ -159,7 +159,7 @@ def chi2_select():
 	chi2_dict = {}
 	for i in range(len(fs_chi2.scores_)):
 		chi2_dict[i] = fs_chi2.scores_[i]
-		# print('Feature %d: %f' % (i, fs_chi2.scores_[i]))
+		print('Feature %d: %f' % (i, fs_chi2.scores_[i]))
 	chi2_dict = sorted(chi2_dict, key=chi2_dict.get, reverse = True)
 	plt.bar([i for i in range(len(fs_chi2.scores_))], fs_chi2.scores_)
 	plt.savefig('output/chi2_fs.png', bbox_inches = 'tight')
@@ -177,30 +177,35 @@ def mi_select():
 	plt.savefig('output/mi_fs.png', bbox_inches = 'tight')
 	plt.close()
 	return mi_dict
+def chi2_select_no_graph():
+	fs_chi2 = select_features_chi2_helper(X_train_full, y_train_full)
+	chi2_dict = {}
+	for i in range(len(fs_chi2.scores_)):
+		chi2_dict[i] = fs_chi2.scores_[i]
+	chi2_dict = sorted(chi2_dict, key=chi2_dict.get, reverse = True)
+	return chi2_dict
 def mi_select_no_graph():
 	fs_mi = select_features_mi_helper(X_train_full, y_train_full)
 	mi_dict = {}
 	for i in range(len(fs_mi.scores_)):
 		mi_dict[i] = fs_mi.scores_[i]
-		# print('Feature %d: %f' % (i, fs_mi.scores_[i]))
 	mi_dict = sorted(mi_dict, key=mi_dict.get, reverse = True)
 	return mi_dict
 # two calls below are only used to create graphs. Actual repeated checking is done below
 chi2_dict = chi2_select()
 mi_dict = mi_select()
-# feature_set = set(mi_select_no_graph()[:20])
-# for rep_mi in range(19, 13, -1):
-#     if rep_mi < 15:
-#         temp_feature_set = set(mi_select_no_graph()[:15])
-#         feature_set.intersection_update(temp_feature_set)
-#     else:
-#         temp_feature_set = set(mi_select_no_graph()[:rep_mi])
-#         feature_set.intersection_update(temp_feature_set)
+# feature_set = set(mi_select_no_graph()[:17])
+# temp_set = set(chi2_select_no_graph()[:14])
+# feature_set = feature_set.union(temp_set)
+# for rep_mi in range(17, 7, -1):
+#     temp_feature_set = set(mi_select_no_graph()[:rep_mi])
+#     feature_set.intersection_update(temp_feature_set)
+# print(feature_set)
 feature_set = [9, 10, 14, 15, 16, 18]
 # ['high_risk_exposure_occupation', 'diabetes', 'chd', 'htn', 'cancer',
 #        'asthma', 'copd', 'autoimmune_dis', 'smoker', 'cough', 'fever', 'sob',
 #        'diarrhea', 'fatigue', 'headache', 'loss_of_smell', 'loss_of_taste',
-#        'runny_nose', 'muscle_sore', 'sore_throat', 'age_greater_than_55']
+#        'runny_nose', 'muscle_sore', 'sore_throat', 'age_greater_than_60']
 X_train_full_colnames = X_train_full.columns
 fs_colnames = []
 for elem in feature_set:
@@ -219,6 +224,7 @@ print(X_train_full_fs.columns)
 # X_validation_fs_post = pd.DataFrame(X_validation_fs_post, columns = X_train_full.columns)
 
 
+# # One-Class Classification
 # clf = IsolationForest(n_estimators=500, max_features=6, bootstrap=True, n_jobs=-1, random_state=0, warm_start=True).fit(X_train_full_fs)
 # y_pred = clf.predict(X_validation_full_fs)
 # for hhh in range(len(y_pred)):
@@ -338,7 +344,8 @@ rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 '''
 # Testing best parameters
 def rfc(train_x, train_y, test_x, test_y):
-    rforest = RandomForestClassifier(n_jobs=-1, n_estimators=922, min_samples_split=5, min_samples_leaf=1, max_features='sqrt', max_depth=40, bootstrap=True)
+    rforest = RandomForestClassifier(n_jobs=-1, n_estimators=922, min_samples_split=2, min_samples_leaf=1, max_features='auto', max_depth=20, 
+    bootstrap=True)
     rforest.fit(train_x, train_y)
     y_predictions = rforest.predict(test_x)
     print("RMSE for Random Forest Classifier = ", mean_squared_error(test_y, y_predictions))
@@ -356,7 +363,7 @@ rfc(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
 '''
 
 
-
+'''
 # Random Forest Random Search CV
 print("RF Random Search CV...")
 rf_model = RandomForestClassifier()
@@ -395,7 +402,7 @@ print('Best Hyperparameters: %s' % rf_result.best_params_)
 # print('Parameters currently in use:\n')
 # pprint(rf.get_params())
 dict_to_txt(rf_result.best_params_, "rf_best_params")
-
+'''
 
 '''
 # Grid Search CV
@@ -403,12 +410,24 @@ print("Concentrated Grid Search CV from Random Search CV results...")
 # Set up Grid Search CV parameters by expanding in, both directions, the best parameter settings obtained in random search cv
 # e.g. best min_sample_leaf values is 4, check 3 and 5 in grid search
 # grid search searches every possible combination of parameter values that you specified
+rf_model = RandomForestClassifier()
+# repeated KFold repeats a single KFold process for n_repeats number of times
+# on each repeat, the KFolds are partitioned randomly 
+rf_cv = RepeatedStratifiedKFold(n_splits=4, n_repeats=3, random_state=seed)
 grid_space = {}
-grid_search = GridSearchCV(estimator=rf_model, param_distributions=grid_space, n_iter=500, scoring='f1_macro', n_jobs=-1, cv=rf_cv, random_state=seed)
+grid_space['n_estimators'] = [922]
+grid_space['max_features'] = ['auto']
+grid_space['max_depth'] = [16, 17, 18, 19, 20, 21, 22, 23, 24]
+grid_space['min_samples_split'] = [1, 2, 3]
+grid_space['min_samples_leaf'] = [1, 2]
+grid_space['bootstrap'] = [True]
+grid_space['n_jobs'] = [-1]
+grid_search = GridSearchCV(estimator=rf_model, param_grid=grid_space, scoring='f1_macro', n_jobs=-1, cv=rf_cv)
 grid_result = grid_search.fit(X_train_full_fs, y_train_full)
 print('Best Score: %s' % grid_result.best_score_)
 print('Best Hyperparameters: %s' % grid_result.best_params_)
 best_params = grid_result.best_params_
+dict_to_txt(grid_result.best_params_, "grid_rf_best_params")
 '''
 
 '''
