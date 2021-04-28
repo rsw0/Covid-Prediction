@@ -430,7 +430,7 @@ best_params = grid_result.best_params_
 dict_to_txt(grid_result.best_params_, "grid_rf_best_params")
 '''
 
-'''
+
 # KNN & Logistic & Decision Tree & Complement Naive Bayes & Random Forest
 # X_train_full, X_validation_full, y_train_full, y_validation_full
 # KNN
@@ -539,4 +539,3 @@ def xgboo(train_x, train_y, test_x, test_y):
     plt.show()
 print("XGBoost...")
 xgboo(X_train_full_fs, y_train_full, X_validation_full_fs, y_validation_full)
-'''
