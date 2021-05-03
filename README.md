@@ -7,7 +7,7 @@ This study seeks to use machine learning to predict Covid-19 diagnosis from a mu
 The results included in the report and the presentation are fully reproducible. Random states have been set for all functions and methods. The model is built on Python version 3.8.5. All dependencies are listed as imports in the process-predict.py file. To reproduce the results, download the repository and run the following command in terminal. Results will be saved to the "output" folder.
 
 ```
-python3 process-predict.py
+python3.8 process-predict.py
 ```
 
 Project Team Member: Runsheng Wang & Jinqi Lu
